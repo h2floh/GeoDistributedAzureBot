@@ -98,7 +98,7 @@ resource "azurerm_key_vault_secret" "AppInsightId" {
 }
 
 resource "azurerm_key_vault_secret" "AppInsightInstrumentationKey" {
-  name         = "AppInsightInstrumentationKey"
+  name         = "ApplicationInsights--InstrumentationKey"
   value        = azurerm_application_insights.Bot.instrumentation_key
   key_vault_id = azurerm_key_vault.GeoBot.id
 }
