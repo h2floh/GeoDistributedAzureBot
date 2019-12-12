@@ -21,9 +21,11 @@ resource "azurerm_traffic_manager_endpoint" "Region" {
   name                = each.key
   resource_group_name = azurerm_traffic_manager_profile.Bot.resource_group_name
   profile_name        = azurerm_traffic_manager_profile.Bot.name
-  target              = azurerm_app_service.Region[each.key].default_site_hostname
-  type                = "externalEndpoints"
-  endpoint_location   = azurerm_resource_group.Region[each.key].location
+  //target              = azurerm_app_service.Region[each.key].default_site_hostname
+  //type                = "externalEndpoints"
+  //endpoint_location   = azurerm_resource_group.Region[each.key].location
+  type                = "azureEndpoints"
+  target_resource_id  = azurerm_app_service.Region[each.key].id
 }
 
 resource "azurerm_app_service_plan" "Region" {
@@ -34,8 +36,8 @@ resource "azurerm_app_service_plan" "Region" {
   resource_group_name = azurerm_resource_group.Region[each.key].name
 
   sku {
-    tier = "Basic"
-    size = "B1"
+    tier = "Standard"
+    size = "S1"
   }
 }
 
