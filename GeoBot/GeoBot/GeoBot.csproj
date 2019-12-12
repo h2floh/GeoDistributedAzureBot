@@ -10,6 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\.well-known\acme-challenge\fh4rgaYL4nEfyydQjsGTNCY8TFbT6AiKQ_tEr8B_6qg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Cards\welcomeCard.json" />
   </ItemGroup>
 
