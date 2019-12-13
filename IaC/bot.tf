@@ -71,8 +71,28 @@ resource "azurerm_key_vault" "GeoBot" {
         "delete",
         "list"
     ]
+
+    certificate_permissions = [
+        "get",
+        "import",
+        "delete",
+        "list"
+    ]
   }
 
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = var.magic_resource_principal_object_id
+
+    secret_permissions = [
+        "get",
+    ]
+
+    certificate_permissions = [
+        "get",
+    ]
+  }
+  
   network_acls {
     default_action = "Allow"
     bypass = "None"
@@ -98,7 +118,7 @@ resource "azurerm_key_vault_secret" "AppInsightId" {
 }
 
 resource "azurerm_key_vault_secret" "AppInsightInstrumentationKey" {
-  name         = "AppInsightInstrumentationKey"
+  name         = "ApplicationInsights--InstrumentationKey"
   value        = azurerm_application_insights.Bot.instrumentation_key
   key_vault_id = azurerm_key_vault.GeoBot.id
 }
@@ -193,4 +213,31 @@ resource "azurerm_cosmosdb_sql_container" "botdb" {
   account_name        = azurerm_cosmosdb_account.botdb.name
   database_name       = azurerm_cosmosdb_sql_database.botdb.name
   partition_key_path  = "/id"
+}
+
+resource "azurerm_key_vault_certificate" "TrafficManager" {
+  name         = "TrafficManagerSSL"
+  key_vault_id = azurerm_key_vault.GeoBot.id
+
+  certificate {
+    contents = filebase64(var.pfx_certificate_file_location)
+    password = var.pfx_certificate_password
+  }
+
+  certificate_policy {
+    issuer_parameters {
+      name = "Unknown" // see https://github.com/terraform-providers/terraform-provider-azurerm/blob/master/examples/app-service-certificate/stored-in-keyvault/main.tf
+    }
+
+    key_properties {
+      exportable = true
+      key_size   = 2048
+      key_type   = "RSA"
+      reuse_key  = false
+    }
+
+    secret_properties {
+      content_type = "application/x-pkcs12"
+    }
+  }
 }

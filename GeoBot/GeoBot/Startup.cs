@@ -16,17 +16,27 @@ using GeoBot.Dialogs;
 using Microsoft.Extensions.Logging;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace GeoBot
 {
     public class Startup
     {
+        private readonly IConfiguration _config;
+
+        public Startup(IConfiguration config)
+        {
+            _config = config;
+        }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services, ILogger logger, IConfiguration configuration)
+        public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-            
+
+            // The following line enables Application Insights telemetry collection.
+            services.AddApplicationInsightsTelemetry(_config);
+
             // Create the Bot Framework Adapter with error handling enabled.
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
@@ -34,22 +44,22 @@ namespace GeoBot
             IStorage storage;
 
             /* COSMOSDB STORAGE - Uncomment the code in this section to use CosmosDB storage */
-            var cosmosDBIsConfigured = !string.IsNullOrEmpty(configuration["CosmosDBStateStoreEndpoint"]) && !string.IsNullOrEmpty(configuration["CosmosDBStateStoreKey"]) && !string.IsNullOrEmpty(configuration["CosmosDBStateStoreDatabaseId"]) && !string.IsNullOrEmpty(configuration["CosmosDBStateStoreCollectionId"]);
+            var cosmosDBIsConfigured = !string.IsNullOrEmpty(_config["CosmosDBStateStoreEndpoint"]) && !string.IsNullOrEmpty(_config["CosmosDBStateStoreKey"]) && !string.IsNullOrEmpty(_config["CosmosDBStateStoreDatabaseId"]) && !string.IsNullOrEmpty(_config["CosmosDBStateStoreCollectionId"]);
             if (cosmosDBIsConfigured)
             {
                 var cosmosDbStorageOptions = new CosmosDbPartitionedStorageOptions()
                 {
-                    CosmosDbEndpoint = configuration["CosmosDBStateStoreEndpoint"],
-                    AuthKey = configuration["CosmosDBStateStoreKey"],
-                    DatabaseId = configuration["CosmosDBStateStoreDatabaseId"],
-                    ContainerId = configuration["CosmosDBStateStoreCollectionId"]
+                    CosmosDbEndpoint = _config["CosmosDBStateStoreEndpoint"],
+                    AuthKey = _config["CosmosDBStateStoreKey"],
+                    DatabaseId = _config["CosmosDBStateStoreDatabaseId"],
+                    ContainerId = _config["CosmosDBStateStoreCollectionId"]
                 };
                 storage = new CosmosDbPartitionedStorage(cosmosDbStorageOptions);
             }
             else
             {
                 storage = new MemoryStorage();
-                logger.LogWarning("CosmosDB Storage not used!");
+                Console.WriteLine("CosmosDB Storage not used!");
             } 
 
             /* END COSMOSDB STORAGE */
@@ -58,8 +68,9 @@ namespace GeoBot
             var userState = new UserState(storage);
             services.AddSingleton(userState);
 
-            // Create the Conversation state. (Used by the Dialog system itself.)
-            services.AddSingleton<ConversationState>();
+            // Create the Conversation state passing in the storage layer.
+            var conversationState = new ConversationState(storage);
+            services.AddSingleton(conversationState);
 
             // Register LUIS recognizer
             services.AddSingleton<AddressRecognizer>();

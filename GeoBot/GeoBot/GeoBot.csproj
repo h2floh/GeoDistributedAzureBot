@@ -6,6 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\.well-known\**" />
+    <Content Remove="wwwroot\.well-known\**" />
+    <EmbeddedResource Remove="wwwroot\.well-known\**" />
+    <None Remove="wwwroot\.well-known\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Cards\welcomeCard.json" />
   </ItemGroup>
 
@@ -15,6 +22,7 @@
 
   <ItemGroup>
     <PackageReference Include="CSE.SecureWebServerHelper" Version="0.1.6-preview" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.12.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Bot.Builder.AI.Luis" Version="4.6.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Azure" Version="4.6.3" />

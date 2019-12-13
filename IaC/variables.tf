@@ -9,6 +9,14 @@ variable "microsoft_app_id" {
 variable "microsoft_app_secret" {
 }
 
+variable "pfx_certificate_file_location" {
+
+}
+
+variable "pfx_certificate_password" {
+
+}
+
 variable "azure_bot_regions" {
   type = list
   default = [ 
@@ -34,4 +42,8 @@ variable "environment" {
 
 variable "bot_sku" {
   default = "S1"
+}
+
+variable "magic_resource_principal_object_id" {
+  default = "f8daea97-62e7-4026-becf-13c2ea98e8b4"
 }
