@@ -52,6 +52,7 @@ resource "azurerm_app_service" "Region" {
 
   site_config {
     always_on = "true"
+    ftps_state = "Disabled"
   }
 
   app_settings = {
@@ -73,6 +74,11 @@ resource "azurerm_key_vault_access_policy" "Region" {
     object_id = azurerm_app_service.Region[each.key].identity[0].principal_id
 
     secret_permissions = [
+        "get",
+        "list"
+    ]
+
+    certificate_permissions = [
         "get",
         "list"
     ]
@@ -106,4 +112,28 @@ resource "azurerm_cognitive_account" "LUISRegion" {
     name = "S0"
     tier = "Standard"
   }
+}
+
+resource "azurerm_app_service_certificate" "TrafficManager" {
+  for_each = local.azure_bot_regions
+
+  name                = "trafficmanager"
+  location            = azurerm_resource_group.Region[each.key].location
+  resource_group_name = azurerm_resource_group.Region[each.key].name
+  key_vault_secret_id = azurerm_key_vault_certificate.TrafficManager.secret_id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.Region,
+    azurerm_key_vault.GeoBot
+  ]
+}
+
+resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
+  for_each = local.azure_bot_regions
+
+  hostname            = azurerm_traffic_manager_profile.Bot.fqdn
+  app_service_name    = azurerm_app_service.Region[each.key].name
+  resource_group_name = azurerm_resource_group.Region[each.key].name
+  ssl_state           = "SniEnabled"
+  thumbprint          = azurerm_app_service_certificate.TrafficManager[each.key].thumbprint
 }

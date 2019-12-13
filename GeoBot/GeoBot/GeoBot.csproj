@@ -6,11 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Cards\welcomeCard.json" />
+    <Compile Remove="wwwroot\.well-known\**" />
+    <Content Remove="wwwroot\.well-known\**" />
+    <EmbeddedResource Remove="wwwroot\.well-known\**" />
+    <None Remove="wwwroot\.well-known\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\.well-known\acme-challenge\fh4rgaYL4nEfyydQjsGTNCY8TFbT6AiKQ_tEr8B_6qg" />
+    <Content Remove="Cards\welcomeCard.json" />
   </ItemGroup>
 
   <ItemGroup>
