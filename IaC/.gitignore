@@ -1,0 +1,2 @@
+# Ignore intermediate body.json file from PowerShell Script
+body.json
