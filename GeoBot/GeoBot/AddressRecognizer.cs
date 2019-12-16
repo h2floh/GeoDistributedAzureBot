@@ -24,7 +24,7 @@ namespace GeoBot
                 var luisApplication = new LuisApplication(
                     configuration["LuisAppId"],
                     configuration[luisKeyKey],
-                    "https://" + configuration[luisHostNameKey]);
+                    configuration[luisHostNameKey]);
 
                 _recognizer = new LuisRecognizer(luisApplication);
             }
