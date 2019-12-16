@@ -28,7 +28,6 @@ namespace GeoBot.Dialogs
         protected readonly ILogger Logger;
         protected readonly IConfiguration configuration;
         protected readonly string region;
-        protected readonly string AcutualLUISStepDialogId;
 
         // Dependency injection uses this constructor to instantiate MainDialog
         public MainDialog(AddressRecognizer luisRecognizer, ILogger<MainDialog> logger, IConfiguration config)
