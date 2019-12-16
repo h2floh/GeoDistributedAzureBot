@@ -136,4 +136,10 @@ resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
   resource_group_name = azurerm_resource_group.Region[each.key].name
   ssl_state           = "SniEnabled"
   thumbprint          = azurerm_app_service_certificate.TrafficManager[each.key].thumbprint
+
+  depends_on = [
+    azurerm_key_vault_access_policy.Region,
+    azurerm_key_vault.GeoBot,
+    azurerm_traffic_manager_endpoint.Region
+  ]
 }

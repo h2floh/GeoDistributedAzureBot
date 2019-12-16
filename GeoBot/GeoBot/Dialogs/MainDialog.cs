@@ -18,6 +18,7 @@ using GeoBot;
 using GeoBot.CognitiveModels;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 
 namespace GeoBot.Dialogs
 {
@@ -39,6 +40,7 @@ namespace GeoBot.Dialogs
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), new WaterfallStep[]
             {
                 IntroStepAsync,
+                ActStepAsync
             }));
 
             // The initial child Dialog to run.
@@ -60,6 +62,38 @@ namespace GeoBot.Dialogs
             var messageText = stepContext.Options?.ToString() ?? "What can I help you with today?\nSay something like \"Go to adress 8178 161st avenue northeast, redmond, washington\"";
             var promptMessage = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput);
             return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+        }
+
+        private async Task<DialogTurnResult> ActStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            if (!_luisRecognizer.IsConfigured)
+            {
+                // LUIS is not configured, we just run the TextPrompt again
+                var promptMessage = MessageFactory.Text("Something went completely wrong with the message flow!");
+                return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions { Prompt = promptMessage }, cancellationToken);
+            }
+
+            // Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
+            var luisResult = await _luisRecognizer.RecognizeAsync<AddressFinder>(stepContext.Context, cancellationToken);
+            switch (luisResult.TopIntent().intent)
+            {
+                case AddressFinder.Intent.POI_GetAddress:
+
+                    var textResult = JsonConvert.SerializeObject(luisResult);
+                    var getAddressText = $"GetAddress Result:\n{textResult}";
+                    var getAddressMessage = MessageFactory.Text(getAddressText, getAddressText, InputHints.IgnoringInput);
+                    await stepContext.Context.SendActivityAsync(getAddressMessage, cancellationToken);
+                    break;
+
+                default:
+                    // Catch all for unhandled intents
+                    var didntUnderstandMessageText = $"Sorry, I didn't get that. Please try asking in a different way (intent was {luisResult.TopIntent().intent})";
+                    var didntUnderstandMessage = MessageFactory.Text(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
+                    await stepContext.Context.SendActivityAsync(didntUnderstandMessage, cancellationToken);
+                    break;
+            }
+
+            return await stepContext.NextAsync(null, cancellationToken);
         }
     }
 }

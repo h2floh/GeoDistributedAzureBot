@@ -60,8 +60,16 @@ resource "azurerm_key_vault" "GeoBot" {
   tenant_id                   = data.azurerm_client_config.current.tenant_id
 
   sku_name = "standard"
+  
+  network_acls {
+    default_action = "Allow"
+    bypass = "None"
+  }
+}
 
-  access_policy {
+resource "azurerm_key_vault_access_policy" "currentClient" {
+    key_vault_id = azurerm_key_vault.GeoBot.id
+
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
@@ -78,9 +86,11 @@ resource "azurerm_key_vault" "GeoBot" {
         "delete",
         "list"
     ]
-  }
+}
 
-  access_policy {
+resource "azurerm_key_vault_access_policy" "webAppPrincipal" {
+    key_vault_id = azurerm_key_vault.GeoBot.id
+
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = var.magic_resource_principal_object_id
 
@@ -91,12 +101,6 @@ resource "azurerm_key_vault" "GeoBot" {
     certificate_permissions = [
         "get",
     ]
-  }
-  
-  network_acls {
-    default_action = "Allow"
-    bypass = "None"
-  }
 }
 
 resource "azurerm_key_vault_secret" "MSAppId" {
