@@ -20,6 +20,7 @@ using System.Configuration;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
+
 namespace GeoBot.Dialogs
 {
     public class MainDialog : ComponentDialog
@@ -28,6 +29,7 @@ namespace GeoBot.Dialogs
         protected readonly ILogger Logger;
         protected readonly IConfiguration configuration;
         protected readonly string region;
+
 
         // Dependency injection uses this constructor to instantiate MainDialog
         public MainDialog(AddressRecognizer luisRecognizer, ILogger<MainDialog> logger, IConfiguration config)
@@ -55,8 +57,7 @@ namespace GeoBot.Dialogs
             {
                 var keyVaultName = configuration["KeyVaultName"];
                 await stepContext.Context.SendActivityAsync(
-                    MessageFactory.Text($"NOTE: LUIS is not configured. To enable all capabilities, add 'LuisAppId' as a secret to your keyvault named '{keyVaultName}'. Replied from Azure region {region}.", inputHint: InputHints.IgnoringInput), cancellationToken);
-
+                MessageFactory.Text($"NOTE: LUIS is not configured. To enable all capabilities, add 'LuisAppId' as a secret to your keyvault named '{keyVaultName}'. Replied from Azure region {region}.", inputHint: InputHints.IgnoringInput), cancellationToken);
                 return await stepContext.NextAsync(null, cancellationToken);
             }
 

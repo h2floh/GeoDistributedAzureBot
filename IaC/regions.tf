@@ -142,4 +142,5 @@ resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
     azurerm_key_vault.GeoBot,
     azurerm_traffic_manager_endpoint.Region
   ]
+
 }
