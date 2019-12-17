@@ -1,2 +1,4 @@
 # Ignore intermediate body.json file from PowerShell Script
 body.json
+# Ignore zip file for publish
+botselfcontained.zip

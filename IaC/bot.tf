@@ -22,10 +22,10 @@ resource "azurerm_traffic_manager_profile" "Bot" {
   monitor_config {
     protocol                     = "https"
     port                         = 443
-    path                         = "/"
+    path                         = "/healthcheck"
     interval_in_seconds          = 30
     timeout_in_seconds           = 9
-    tolerated_number_of_failures = 3
+    tolerated_number_of_failures = 2
   }
 
   tags = {
@@ -101,6 +101,10 @@ resource "azurerm_key_vault_access_policy" "webAppPrincipal" {
     certificate_permissions = [
         "get",
     ]
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "MSAppId" {
