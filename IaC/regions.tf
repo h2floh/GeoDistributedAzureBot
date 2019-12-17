@@ -21,9 +21,6 @@ resource "azurerm_traffic_manager_endpoint" "Region" {
   name                = each.key
   resource_group_name = azurerm_traffic_manager_profile.Bot.resource_group_name
   profile_name        = azurerm_traffic_manager_profile.Bot.name
-  //target              = azurerm_app_service.Region[each.key].default_site_hostname
-  //type                = "externalEndpoints"
-  //endpoint_location   = azurerm_resource_group.Region[each.key].location
   type                = "azureEndpoints"
   target_resource_id  = azurerm_app_service.Region[each.key].id
 }
@@ -63,6 +60,13 @@ resource "azurerm_app_service" "Region" {
   identity {
       type = "SystemAssigned"
   }
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to site_config
+      site_config
+    ]
+  }
 }
 
 resource "azurerm_key_vault_access_policy" "Region" {
@@ -82,6 +86,10 @@ resource "azurerm_key_vault_access_policy" "Region" {
         "get",
         "list"
     ]
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "LUISKeyRegion" {
@@ -124,7 +132,8 @@ resource "azurerm_app_service_certificate" "TrafficManager" {
 
   depends_on = [
     azurerm_key_vault_access_policy.Region,
-    azurerm_key_vault.GeoBot
+    azurerm_key_vault_access_policy.currentClient,
+    azurerm_key_vault_access_policy.webAppPrincipal
   ]
 }
 
@@ -138,8 +147,6 @@ resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
   thumbprint          = azurerm_app_service_certificate.TrafficManager[each.key].thumbprint
 
   depends_on = [
-    azurerm_key_vault_access_policy.Region,
-    azurerm_key_vault.GeoBot,
     azurerm_traffic_manager_endpoint.Region
   ]
 
