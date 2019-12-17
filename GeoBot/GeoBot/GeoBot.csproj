@@ -29,5 +29,6 @@
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.6.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.6.3" />
     <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.2.9" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.4" />
   </ItemGroup>
 </Project>
