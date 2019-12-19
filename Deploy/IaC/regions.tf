@@ -98,6 +98,10 @@ resource "azurerm_key_vault_secret" "LUISKeyRegion" {
   name         = "LUISAPIKey${each.key}"
   value        = azurerm_cognitive_account.LUISRegion[each.key].primary_access_key
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "LUISEndpointRegionA" {
@@ -106,6 +110,10 @@ resource "azurerm_key_vault_secret" "LUISEndpointRegionA" {
   name         = "LUISAPIHostName${each.key}"
   value        = azurerm_cognitive_account.LUISRegion[each.key].endpoint
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_cognitive_account" "LUISRegion" {

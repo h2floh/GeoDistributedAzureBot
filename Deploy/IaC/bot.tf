@@ -111,36 +111,60 @@ resource "azurerm_key_vault_secret" "MSAppId" {
   name         = "MicrosoftAppId"
   value        = var.microsoft_app_id
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "MSAppSecret" {
   name         = "MicrosoftAppPassword"
   value        = var.microsoft_app_secret
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "AppInsightId" {
   name         = "AppInsightId"
   value        = azurerm_application_insights.Bot.app_id
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "AppInsightInstrumentationKey" {
   name         = "ApplicationInsights--InstrumentationKey"
   value        = azurerm_application_insights.Bot.instrumentation_key
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "LUISAuthoringKey" {
   name         = "LUISAuthoringKey"
   value        = azurerm_cognitive_account.LUISAuthoring.primary_access_key
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "LUISAuthoringEndpoint" {
   name         = "LUISAuthoringEndpoint"
   value        = azurerm_cognitive_account.LUISAuthoring.endpoint
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_cognitive_account" "LUISAuthoring" {
@@ -159,24 +183,40 @@ resource "azurerm_key_vault_secret" "CosmosDBEndpoint" {
   name         = "CosmosDBStateStoreEndpoint"
   value        = azurerm_cosmosdb_account.botdb.endpoint
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "CosmosDBKey" {
   name         = "CosmosDBStateStoreKey"
   value        = azurerm_cosmosdb_account.botdb.primary_master_key
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "CosmosDBDatabase" {
   name         = "CosmosDBStateStoreDatabaseId"
   value        = azurerm_cosmosdb_sql_database.botdb.name
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_key_vault_secret" "CosmosDBCollection" {
   name         = "CosmosDBStateStoreCollectionId"
   value        = azurerm_cosmosdb_sql_container.botdb.name
   key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
 }
 
 resource "azurerm_cosmosdb_account" "botdb" {
