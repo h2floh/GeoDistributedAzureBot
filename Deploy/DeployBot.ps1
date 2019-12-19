@@ -16,11 +16,11 @@ dotnet publish ..\GeoBot\GeoBot\GeoBot.csproj -r win-x64 -c release --no-self-co
 
 # 2. Compress publish folder to zip file
 echo "2. Compress publish folder to zip file"
-Compress-Archive -Path ..\GeoBot\GeoBot\bin\release\netcoreapp2.2\win-x64\publish\* -DestinationPath botselfcontained.zip -Force
+Compress-Archive -Path ..\GeoBot\GeoBot\bin\release\netcoreapp2.2\win-x64\publish\* -DestinationPath botnotselfcontained.zip -Force
 
 # 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)
 echo "3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)"
-$WebAppAccounts = terraform output -json webAppAccounts | ConvertFrom-Json
+$WebAppAccounts = terraform output -state=".\IaC\terraform.tfstate" -json webAppAccounts | ConvertFrom-Json
 
 # 4. Deploy to WebApps
 echo "4. Deploy to WebApps"
@@ -30,5 +30,5 @@ $WebAppAccounts | ForEach {
     $rg=$_.resource_group
 
     echo "- Deploy to $account"
-    az webapp deployment source config-zip --src botselfcontained.zip --name $account --resource-group $rg
+    az webapp deployment source config-zip --src botnotselfcontained.zip --name $account --resource-group $rg
 }
