@@ -35,6 +35,7 @@ luis publish version --appId $LUISappInfo.id --versionId $LUISappInfo.activeVers
 echo "5. Sets the LUIS Application Id in KeyVault for distribution to Bot WebApp nodes (Azure CLI)"
 az keyvault secret set --vault-name $keyVault.name --name LuisAppId --value $LUISappInfo.id
 
+
 # 6. Prepares and imports data necessary for LUIS Endpoint & Key association REST API (using Azure CLI - due to feature lag in LUIS CLI) 
 echo "6. Prepares and imports data necessary for LUIS Endpoint & Key association REST API (using Azure CLI - due to feature lag in LUIS CLI)"
 $LUISAppId=$LUISappInfo.id
