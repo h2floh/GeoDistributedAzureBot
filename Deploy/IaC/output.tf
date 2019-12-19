@@ -19,3 +19,10 @@ output "trafficManager" {
        "resource_group" = azurerm_traffic_manager_profile.Bot.resource_group_name 
   }
 }
+
+output "keyVault" {
+  value = {
+       "name" = azurerm_key_vault.GeoBot.name, 
+       "resource_group" = azurerm_key_vault.GeoBot.resource_group_name 
+  }
+}
