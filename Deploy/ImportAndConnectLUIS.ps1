@@ -42,7 +42,7 @@ $subscriptionId=$(az account show --query 'id' -o tsv)
 
 # 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)
 echo "7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)"
-$LUISAccounts = terraform output -json luisAccounts | ConvertFrom-Json
+$LUISAccounts = terraform output -state=".\IaC\terraform.tfstate" -json luisAccounts | ConvertFrom-Json
 
 # 8. Loops to associate every LUIS account with the LUIS application (cURL command)
 echo "8. Loops to associate every LUIS account with the LUIS application (cURL command)"
