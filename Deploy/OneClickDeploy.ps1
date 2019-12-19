@@ -47,4 +47,4 @@ cd ..
 .\ImportAndConnectLUIS.ps1
 
 # Deploy to WebApps
-.\DeployBot.ps1
+.\DeployBotToWebapp.ps1
