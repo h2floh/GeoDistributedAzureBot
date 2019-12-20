@@ -25,7 +25,14 @@ Prerequisites for all tasks:
 1. Creation of AAD AppId
 
 ```pwsh
+# Create AAD application 
+az ad app create --display-name <YourBotName> --available-to-other-tenants --reply-urls 'https://token.botframework.com/.auth/web/redirect'
 
+# Retrieve Application Id
+$appId=$(az ad app list --display-name <YourBotName> --query '[0].appId' -o tsv)
+
+# Create Application Password
+$appPassword=$(az ad app credential reset --id $appId --query 'password' -o tsv)
 ```
 
 2. Issuing a SSL Certificate
