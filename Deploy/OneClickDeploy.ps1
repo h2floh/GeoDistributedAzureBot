@@ -23,10 +23,10 @@ param(
     [Parameter(Mandatory=$true, HelpMessage="AAD AppId Secret")]
     [string] $MICROSOFT_APP_SECRET,
 
-    [Parameter(Mandatory=$true, HelpMessage="SSL CERT (PFX Format) file location")]
+    [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
     
-    [Parameter(Mandatory=$true, HelpMessage="SSL CERT (PFX Format) file password")]
+    [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD
 )
 
@@ -37,10 +37,10 @@ if( $PFX_FILE_LOCATION -match '^.\:' -eq $False ) {
     $PFX_FILE_LOCATION = '../' + $PFX_FILE_LOCATION
 }
 
-# Execute Terraform
+# Execute first Terraform to create the infrastructure
 cd IaC
 terraform init
-terraform apply -var "bot_name=$BOT_NAME" -var "microsoft_app_id=$MICROSOFT_APP_ID" -var "microsoft_app_secret=$MICROSOFT_APP_SECRET" -var "pfx_certificate_file_location=$PFX_FILE_LOCATION" -var "pfx_certificate_password=$PFX_FILE_PASSWORD"
+terraform apply -var "bot_name=$BOT_NAME" -var "microsoft_app_id=$MICROSOFT_APP_ID" -var "microsoft_app_secret=$MICROSOFT_APP_SECRET" 
 cd ..
 
 # Execute LUIS Train & Deploy

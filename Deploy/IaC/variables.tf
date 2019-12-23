@@ -10,14 +10,6 @@ variable "microsoft_app_id" {
 variable "microsoft_app_secret" {
 }
 
-// Creation of SSL PFX has to be done apriori
-variable "pfx_certificate_file_location" {
-}
-
-// Creation of SSL PFX export password has to be done apriori
-variable "pfx_certificate_password" {
-}
-
 // These is the list of regions in which you will deploy the Bot
 // each Azure region which provides AppService WebApps and LUIS is possible
 // Check availability of Language Understanding and WebApps here:

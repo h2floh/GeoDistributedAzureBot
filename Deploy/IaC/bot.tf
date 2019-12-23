@@ -27,7 +27,7 @@ resource "azurerm_traffic_manager_profile" "Bot" {
     path                         = "/healthcheck"
     interval_in_seconds          = 30
     timeout_in_seconds           = 9
-    tolerated_number_of_failures = 2
+    tolerated_number_of_failures = 0
   }
 
   tags = {
@@ -286,30 +286,3 @@ resource "azurerm_cosmosdb_sql_container" "botdb" {
   partition_key_path  = "/id"
 }
 
-// Upload and Register the SSL Certificate into KeyVault
-resource "azurerm_key_vault_certificate" "TrafficManager" {
-  name         = "TrafficManagerSSL"
-  key_vault_id = azurerm_key_vault.GeoBot.id
-
-  certificate {
-    contents = filebase64(var.pfx_certificate_file_location)
-    password = var.pfx_certificate_password
-  }
-
-  certificate_policy {
-    issuer_parameters {
-      name = "Unknown" // see https://github.com/terraform-providers/terraform-provider-azurerm/blob/master/examples/app-service-certificate/stored-in-keyvault/main.tf
-    }
-
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = false
-    }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
-  }
-}

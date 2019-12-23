@@ -18,7 +18,8 @@ output "webAppAccounts" {
 output "trafficManager" {
   value = {
        "name" = azurerm_traffic_manager_profile.Bot.name, 
-       "resource_group" = azurerm_traffic_manager_profile.Bot.resource_group_name 
+       "resource_group" = azurerm_traffic_manager_profile.Bot.resource_group_name,
+       "id" = azurerm_traffic_manager_profile.Bot.id
   }
 }
 
