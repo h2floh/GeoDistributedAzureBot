@@ -1,4 +1,4 @@
-
+// This output will be used for subsequent deployment scripts (LUIS part)
 output "luisAccounts" {
   value = [
     for instance in azurerm_cognitive_account.LUISRegion:
@@ -6,6 +6,7 @@ output "luisAccounts" {
   ]
 }
 
+// This output will be used for subsequent deployment scripts (Bot WebApp part)
 output "webAppAccounts" {
   value = [
     for instance in azurerm_app_service.Region:
@@ -13,6 +14,7 @@ output "webAppAccounts" {
   ]
 }
 
+// This output will be used for subsequent destroy scripts
 output "trafficManager" {
   value = {
        "name" = azurerm_traffic_manager_profile.Bot.name, 
@@ -20,6 +22,7 @@ output "trafficManager" {
   }
 }
 
+// This output will be used for subsequent destroy scripts
 output "keyVault" {
   value = {
        "name" = azurerm_key_vault.GeoBot.name, 
