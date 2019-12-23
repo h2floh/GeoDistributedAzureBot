@@ -1,8 +1,10 @@
 
+// Creating a hash map for for_each statement including the bot region names as key and value
 locals{
     azure_bot_regions = { for v in var.azure_bot_regions : v.name => v.name }
 }
 
+// Create a resource group in each region the Bot should be deployed to
 resource "azurerm_resource_group" "Region" {
   for_each = local.azure_bot_regions
 
@@ -15,6 +17,7 @@ resource "azurerm_resource_group" "Region" {
   }
 }
 
+// Add an Endpoint to TrafficManager for every WebApp the bot will be deployed to
 resource "azurerm_traffic_manager_endpoint" "Region" {
   for_each = local.azure_bot_regions
 
@@ -25,6 +28,8 @@ resource "azurerm_traffic_manager_endpoint" "Region" {
   target_resource_id  = azurerm_app_service.Region[each.key].id
 }
 
+// Create an AppService Plan (Standard1) in every region the Bot will be deployed to
+// Standard is minimum SKU to integrate with TrafficManager
 resource "azurerm_app_service_plan" "Region" {
   for_each = local.azure_bot_regions
 
@@ -38,6 +43,7 @@ resource "azurerm_app_service_plan" "Region" {
   }
 }
 
+// Create WebApp for every region the Bot will be deployed to
 resource "azurerm_app_service" "Region" {
   for_each = local.azure_bot_regions
 
@@ -52,11 +58,14 @@ resource "azurerm_app_service" "Region" {
     ftps_state = "Disabled"
   }
 
+  // These Settings are important, this is how the Bot Code will know which KeyVault it should use for retrieving configuration values 
+  // also if there are regionalized values it will know it's own region
   app_settings = {
     region       = each.key
     KeyVaultName = azurerm_key_vault.GeoBot.name
   }
 
+  // This identity is important (Azure Managed Idendity) in order to get passwordless access to KeyVault
   identity {
       type = "SystemAssigned"
   }
@@ -69,6 +78,7 @@ resource "azurerm_app_service" "Region" {
   }
 }
 
+// Add an AccessPolicy to KeyVault for every WebApp Managed Identity
 resource "azurerm_key_vault_access_policy" "Region" {
     for_each = local.azure_bot_regions
 
@@ -92,6 +102,7 @@ resource "azurerm_key_vault_access_policy" "Region" {
   ]
 }
 
+// For every region add the LUIS KEY to KeyVault
 resource "azurerm_key_vault_secret" "LUISKeyRegion" {
   for_each = local.azure_bot_regions
 
@@ -104,7 +115,8 @@ resource "azurerm_key_vault_secret" "LUISKeyRegion" {
   ]
 }
 
-resource "azurerm_key_vault_secret" "LUISEndpointRegionA" {
+// For every region add the LUIS endpoint URL to KeyVault
+resource "azurerm_key_vault_secret" "LUISEndpointRegion" {
   for_each = local.azure_bot_regions
 
   name         = "LUISAPIHostName${each.key}"
@@ -116,6 +128,7 @@ resource "azurerm_key_vault_secret" "LUISEndpointRegionA" {
   ]
 }
 
+// Create a LUIS Endpoint/Key for every Region
 resource "azurerm_cognitive_account" "LUISRegion" {
   for_each = local.azure_bot_regions
 
@@ -130,6 +143,7 @@ resource "azurerm_cognitive_account" "LUISRegion" {
   }
 }
 
+// Load/Map the Azure KeyVault SSL Certificate with every WebApp
 resource "azurerm_app_service_certificate" "TrafficManager" {
   for_each = local.azure_bot_regions
 
@@ -145,6 +159,7 @@ resource "azurerm_app_service_certificate" "TrafficManager" {
   ]
 }
 
+// Map the SSL certificate with the TrafficManager hostname in every WebApp
 resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
   for_each = local.azure_bot_regions
 
