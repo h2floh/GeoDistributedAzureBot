@@ -2,3 +2,5 @@
 body.json
 # Ignore zip file for publish
 botnotselfcontained.zip
+# Ignore Terraform tfvars
+*.tfvars.*

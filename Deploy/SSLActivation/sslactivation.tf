@@ -1,55 +1,45 @@
-# // Creating a hash map for for_each statement including the bot region names as key and value
-# locals{
-#     azure_bot_regions = { for v in var.azure_bot_regions : v => v }
-# }
+// Creating a hash map for for_each statement including the app service names, resource groups and location
+locals{
+    azure_webApps_data = { 
+      for v in var.azure_webApps : 
+        v.name => v
+    }
+}
 
-# // Load/Map the Azure KeyVault SSL Certificate with every WebApp
-# resource "azurerm_app_service_certificate" "TrafficManager" {
-#   for_each = local.azure_bot_regions
+// Load/Map the Azure KeyVault SSL Certificate with every WebApp
+resource "azurerm_app_service_certificate" "SSLCert" {
+  for_each = local.azure_webApps_data
 
-#   name                = "SSL"
-#   location            = azurerm_resource_group.Region[each.key].location
-#   resource_group_name = azurerm_resource_group.Region[each.key].name
-#   key_vault_secret_id = azurerm_key_vault_certificate.TrafficManager.secret_id
+  name                = var.your_domain  
+  location            = each.value.location
+  resource_group_name = each.value.resource_group
+  key_vault_secret_id = data.azurerm_key_vault_secret.SSLcert.id
 
-# }
+}
 
-# // Map the SSL certificate with the TrafficManager hostname in every WebApp
-# resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
-#   for_each = local.azure_bot_regions
+// Map the SSL certificate with the DNS hostname in every WebApp
+resource "azurerm_app_service_custom_hostname_binding" "customDomain" {
+  for_each = local.azure_webApps_data
 
-#   hostname            = var.dns_name
-#   app_service_name    = azurerm_app_service.Region[each.key].name
-#   resource_group_name = azurerm_resource_group.Region[each.key].name
-#   ssl_state           = "SniEnabled"
-#   thumbprint          = azurerm_app_service_certificate.TrafficManager[each.key].thumbprint
-# }
+  hostname            = var.your_domain 
+  app_service_name    = each.value.name
+  resource_group_name = each.value.resource_group
+  ssl_state           = "SniEnabled"
+  thumbprint          = azurerm_app_service_certificate.SSLCert[each.key].thumbprint
 
+  depends_on = [
+    azurerm_traffic_manager_endpoint.webAppTMEndpoint
+  ]
+}
 
-// Upload and Register the SSL Certificate into KeyVault
-# resource "azurerm_key_vault_certificate" "TrafficManager" {
-#   name         = "TrafficManagerSSL"
-#   key_vault_id = azurerm_key_vault.GeoBot.id
+// Add an Endpoint to TrafficManager for every WebApp the bot will be deployed to
+resource "azurerm_traffic_manager_endpoint" "webAppTMEndpoint" {
+  for_each = local.azure_webApps_data
 
-#   certificate {
-#     contents = filebase64(var.pfx_certificate_file_location)
-#     password = var.pfx_certificate_password
-#   }
-
-#   certificate_policy {
-#     issuer_parameters {
-#       name = "Unknown" // see https://github.com/terraform-providers/terraform-provider-azurerm/blob/master/examples/app-service-certificate/stored-in-keyvault/main.tf
-#     }
-
-#     key_properties {
-#       exportable = true
-#       key_size   = 2048
-#       key_type   = "RSA"
-#       reuse_key  = false
-#     }
-
-#     secret_properties {
-#       content_type = "application/x-pkcs12"
-#     }
-#   }
-# }
+  name                = each.value.name
+  endpoint_status     = "Enabled" // In the first deployment step it will be created but deactivated
+  resource_group_name = var.trafficmanager_rg
+  profile_name        = var.trafficmanager_name
+  type                = "azureEndpoints"
+  target_resource_id  = data.azurerm_app_service.WebApps[each.key].id
+}

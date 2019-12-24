@@ -27,20 +27,22 @@ param(
     [string] $PFX_FILE_LOCATION,
     
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
-    [string] $PFX_FILE_PASSWORD
+    [string] $PFX_FILE_PASSWORD,
+
+    [Parameter(HelpMessage="Terraform Automation Flag. 0 -> Interactive, Approval 1 -> Automatic Approval")]
+    [string] $AUTOAPPROVE = "0"
 )
 
-# Check if relative or absolute file path
-if( $PFX_FILE_LOCATION -match '^.\:' -eq $False ) {
-    # relative
-    echo "relative"
-    $PFX_FILE_LOCATION = '../' + $PFX_FILE_LOCATION
-}
-
 # Execute first Terraform to create the infrastructure
+if ($AUTOAPPROVE -eq "1")
+{
+    $AUTOAPPROVE = "-auto-approve"
+} else {
+    $AUTOAPPROVE = ""
+}
 cd IaC
 terraform init
-terraform apply -var "bot_name=$BOT_NAME" -var "microsoft_app_id=$MICROSOFT_APP_ID" -var "microsoft_app_secret=$MICROSOFT_APP_SECRET" 
+terraform apply -var "bot_name=$BOT_NAME" -var "microsoft_app_id=$MICROSOFT_APP_ID" -var "microsoft_app_secret=$MICROSOFT_APP_SECRET" $AUTOAPPROVE
 cd ..
 
 # Execute LUIS Train & Deploy

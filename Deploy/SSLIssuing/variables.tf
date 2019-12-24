@@ -49,3 +49,8 @@ variable "aci_image" {
   default = "h2floh/letsencrypt:keyvault"
 }
 
+// Use Staging or Production of Let's Encrypt (0 = Staging, 1 = Production)
+variable "production" {
+  default = "1"
+}
+

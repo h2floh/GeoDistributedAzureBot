@@ -18,16 +18,16 @@ resource "azurerm_resource_group" "Region" {
 }
 
 // Add an Endpoint to TrafficManager for every WebApp the bot will be deployed to
-resource "azurerm_traffic_manager_endpoint" "Region" {
-  for_each = local.azure_bot_regions
+# resource "azurerm_traffic_manager_endpoint" "Region" {
+#   for_each = local.azure_bot_regions
 
-  name                = each.key
-  endpoint_status     = "Disabled" // In the first deployment step it will be created but deactivated
-  resource_group_name = azurerm_traffic_manager_profile.Bot.resource_group_name
-  profile_name        = azurerm_traffic_manager_profile.Bot.name
-  type                = "azureEndpoints"
-  target_resource_id  = azurerm_app_service.Region[each.key].id
-}
+#   name                = each.key
+#   endpoint_status     = "Disabled" // In the first deployment step it will be created but deactivated
+#   resource_group_name = azurerm_traffic_manager_profile.Bot.resource_group_name
+#   profile_name        = azurerm_traffic_manager_profile.Bot.name
+#   type                = "azureEndpoints"
+#   target_resource_id  = azurerm_app_service.Region[each.key].id
+# }
 
 // Create an AppService Plan (Standard1) in every region the Bot will be deployed to
 // Standard is minimum SKU to integrate with TrafficManager

@@ -23,7 +23,7 @@ resource "azurerm_container_group" "LetsEncryptACI" {
       YOUR_DOMAIN = var.your_domain,
       KEY_VAULT_NAME = var.keyVault_name,
       KEY_VAULT_CERT_NAME = var.keyVault_cert_name,
-      PRODUCTION = 0
+      PRODUCTION = var.production
     }
   }
 
