@@ -12,14 +12,13 @@
 #
 # 2. Terraform execution to activate certificate
 #
-# After the script is successfully executed the bot should be in a usable from WebChat
+# After the script is successfully executed the Bot should be in a usable from within Bot Framework Service (WebChat) and Emulator
 #
 ###
 # Parameters
 param(
     # Only needed in Issuing Mode
     [Parameter(HelpMessage="Mail to be associated with Let's Encrypt certificate")]
-    [ValidatePattern("(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])")]
     [string] $YOUR_CERTIFICATE_EMAIL,
 
     # Only needed in Issuing Mode
@@ -27,29 +26,71 @@ param(
     [string] $YOUR_DOMAIN,
 
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
-    [string] $PFX_FILE_LOCATION = "../SSL/sslcert.pfx",
+    [string] $PFX_FILE_LOCATION,
     
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
-    [Parameter(HelpMessage="Terraform Automation Flag. 0 -> Interactive, Approval 1 -> Automatic Approval")]
-    [string] $AUTOAPPROVE = "0"
+    [Parameter(HelpMessage="KeyVault certificate name")]
+    [string] $KEYVAULT_CERT_NAME = "SSLcert",
+
+    [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
+    [bool] $AUTOAPPROVE = $False,
+
+    [Parameter(HelpMessage="Flag to determine if run from within OneClickDeploy.ps1")]
+    [bool] $ALREADYCONFIRMED = $False,
+
+    [Parameter(HelpMessage="Force Reimport or Reissuing if certificate already exists")]
+    [bool] $FORCE = $False
 )
+# Tell who you are
+Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
+# Helper Variable
+$success = $True
+$sslexists = $False
 
-if (Test-Path -Path $PFX_FILE_LOCATION)
+# Validate Input parameter combination
+$validationresult = .\ValidateParameter.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -ALREADYCONFIRMED $ALREADYCONFIRMED
+
+# Check if SSL Certificate exists
+if ($FORCE -eq $False) 
 {
-    # Import Mode
-    echo "### Import Mode"
-    # Execute Import Script
-    .\ImportSSL.ps1 -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD 
-}
-else {
-    # Issuing Mode
-    echo "### Issuing Mode"
-    # Execute Issuing Script
-    .\CreateSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE -PRODUCTION 0
+    $sslexists = .\CheckExistingSSL.ps1 -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME
 }
 
-# 2. Activate SSL Endpoint
-.\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
+if ($validationresult -and (-not $sslexists))
+{
+    # 0. Deactivate SSL Endpoints (needed if you want to change the SSL for a <yourbot>.trafficmanager.net domain - not needed for custom domain)
+    if ($FORCE -eq $True)
+    {
+        Write-Host "## 0. Deactivate SSL Endpoints"
+        .\DeactivateSSL.ps1
+    }
+
+    # 1. Import SSL Certificate to KeyVault
+    Write-Host "## 1. Import SSL Certificate to KeyVault"
+    if (Test-Path -Path $PFX_FILE_LOCATION)
+    {
+        # Import Mode
+        Write-Host "### Import Mode, load local PFX file"
+        # Execute Import Script
+        $success = .\ImportSSL.ps1 -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME
+    }
+    else {
+        # Issuing Mode
+        Write-Host "### Issuing Mode, issue new certificate and directly upload it to KeyVault from within a container"
+        .\CreateSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME -AUTOAPPROVE $AUTOAPPROVE -PRODUCTION 0
+    }
+    
+    if ($success -eq $True)
+    {
+        # 2. Activate SSL Endpoint
+        Write-Host "## 2. Activate SSL Endpoints"
+        .\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
+    }
+
+}
+elseif ($sslexists -eq $True) {
+    Write-Host "### ERROR, SSL Certificate with KeyVault name-key '$KEYVAULT_CERT_NAME' already exists.`n### If you want to recreate/upload a new one please use -FORCE `$True parameter."
+}
