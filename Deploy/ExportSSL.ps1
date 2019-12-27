@@ -18,6 +18,9 @@ param(
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
+# Helper var
+$success = $True
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
@@ -30,6 +33,7 @@ Write-Host "## 2. Export SSL Certificate from KeyVault"
 # with help from https://blogs.technet.microsoft.com/kv/2016/09/26/get-started-with-azure-key-vault-certificates/
 # retrieve from KeyVault
 $kvSecret = az keyvault secret show --vault-name $KeyVault.name --name $KEYVAULT_CERT_NAME | ConvertFrom-JSON
+$success = $success -and $?
 
 # Convert to X509 cert object
 $kvSecretBytes = [System.Convert]::FromBase64String($kvSecret.value)
@@ -45,5 +49,9 @@ SecureStringToBSTR($password)))
 
 # Save to file
 Set-Content -Path $PFX_FILE_LOCATION -AsByteStream -Value $protectedCertificateBytes
+$success = $success -and $?
 
 Write-Host "### Certificate successfully exported to $PFX_FILE_LOCATION`n(please store and keep it somewhere for reuse)"
+
+# Return execution status
+exit $success

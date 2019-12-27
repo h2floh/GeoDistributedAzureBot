@@ -8,7 +8,7 @@ locals{
 resource "azurerm_resource_group" "Region" {
   for_each = local.azure_bot_regions
 
-  name     = "rg-geobot-region-${each.key}"
+  name     = "rg-${var.bot_name}-region-${each.key}"
   location = each.key
 
   tags = {

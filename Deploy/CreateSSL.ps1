@@ -28,8 +28,17 @@ param(
     [bool] $AUTOAPPROVE = $False,
 
     [Parameter(HelpMessage="KeyVault certificate name")]
-    [string] $KEYVAULT_CERT_NAME = "SSLcert"
+    [string] $KEYVAULT_CERT_NAME = "SSLcert",
+
+    [Parameter(HelpMessage="Maximum wait time for DNS resolve and certificate generation in minutes. Default 15 min")]
+    [int] $MAX_WAIT_TIME_MIN = 15
 )
+# Helper var
+$success = $True
+$loopcount = 0
+$waitretrysec = 10
+$loopmax = (60 * $MAX_WAIT_TIME_MIN ) / $waitretrysec
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
@@ -61,11 +70,12 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
     # If a custom domain is set check if CNAME to TrafficManager FQDN is set
     $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
 
-    while (($? -eq $False) -or (($resolved.NameHost | Where-Object -FilterScript { $_ -eq $TrafficManager.fqdn }) -ne $TrafficManager.fqdn))
+    while ((($? -eq $False) -or (($resolved.NameHost | Where-Object -FilterScript { $_ -eq $TrafficManager.fqdn }) -ne $TrafficManager.fqdn)) -and ($loopcount -le $loopmax))
     {
+        $loopcount++
         Write-Host "### WARNING, there is no CNAME entry for domain '$YOUR_DOMAIN' pointing to '$($TrafficManager.fqdn)'."
-        Write-Host "### Please check your DNS entry, or create the missing CNAME entry. Sleeping for 10 Seconds and try again..."
-        Start-Sleep -s 10
+        Write-Host "### Please check your DNS entry, or create the missing CNAME entry. Sleeping for $waitretrysec seconds and try again..."
+        Start-Sleep -s $waitretrysec
         $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
     } 
 
@@ -81,17 +91,21 @@ terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyV
 -var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
 -var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
 -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" -var "production=$PRODUCTION" $AUTOFLAG
+$success = $success -and $?
 Set-Location ..
 
 # 3. Check for creation of certificate
 Write-Host "## 3. Check for availability of certificate"
-$cert = az keyvault certificate show --vault-name $KeyVault.name --name $KEYVAULT_CERT_NAME
-while ($? -eq $False)
+$loopcount = 0
+az keyvault certificate show --vault-name $KeyVault.name --name $KEYVAULT_CERT_NAME > $null 2> $1
+while ($? -eq $False -and ($loopcount -le $loopmax))
 {
-    Write-Host "Not yet created. Waiting for 10 seconds"
-    Start-Sleep -s 10
-    $cert = az keyvault certificate show --vault-name $KeyVault.name --name $KEYVAULT_CERT_NAME
+    $loopcount++
+    Write-Host "Not yet created. Waiting for $waitretrysec seconds"
+    Start-Sleep -s $waitretrysec
+    az keyvault certificate show --vault-name $KeyVault.name --name $KEYVAULT_CERT_NAME > $null 2> $1
 }
+$success = $success -and $?
 Write-Host "## Certificate found!"
 
 # 4. Destroy Terraform SSLIssuing
@@ -103,4 +117,8 @@ terraform destroy -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($Ke
 -var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
 -var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
 -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" -var "production=$PRODUCTION" $AUTOFLAG
+$success = $success -and $?
 Set-Location ..
+
+# Return execution status
+exit $success

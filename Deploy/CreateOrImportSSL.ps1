@@ -69,6 +69,7 @@ if ($validationresult -and (-not $sslexists))
     {
         Write-Host "## 0. Deactivate SSL Endpoints"
         .\DeactivateSSL.ps1
+        $success = $success -and $LASTEXITCODE
     }
 
     # 1. Import SSL Certificate to KeyVault
@@ -78,28 +79,28 @@ if ($validationresult -and (-not $sslexists))
         # Import Mode
         Write-Host "### Import Mode, load local PFX file"
         # Execute Import Script
-        $success = .\ImportSSL.ps1 -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME
+        .\ImportSSL.ps1 -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME
+        $success = $success -and $LASTEXITCODE
     }
     else {
         # Issuing Mode
         Write-Host "### Issuing Mode, issue new certificate and directly upload it to KeyVault from within a container"
         .\CreateSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME -AUTOAPPROVE $AUTOAPPROVE
+        $success = $success -and $LASTEXITCODE
     }
     
-    if ($success -eq $True)
-    {
-        # 2. Activate SSL Endpoint
-        Write-Host "## 2. Activate SSL Endpoints"
-        .\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
-    }
-
 }
 elseif ($sslexists -eq $True) {
     Write-Host "### WARNING, SSL Certificate with KeyVault name-key '$KEYVAULT_CERT_NAME' already exists.`n### If you want to recreate/upload a new one please use -FORCE `$True parameter."
-
-    if ($RERUN) {
-        # 1. Activate SSL Endpoint
-        Write-Host "## 1. Activate SSL Endpoints"
-        .\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
-    }
 }
+
+if ((($success -eq $True) -and ($validationresult -eq $True)) -or ($RERUN -eq $True))
+{
+    # 2. Activate SSL Endpoint
+    Write-Host "## 2. Activate SSL Endpoints"
+    .\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
+    $success = $success -and $LASTEXITCODE
+}
+
+# Return execution status
+exit $success

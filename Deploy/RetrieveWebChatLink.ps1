@@ -14,6 +14,9 @@
 param(
 
 )
+# Helper var
+$success = $True
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
@@ -24,6 +27,7 @@ $Bot = terraform output -state=".\IaC\terraform.tfstate" -json bot | ConvertFrom
 # 2. Retrieve DirectLine Secret and generate Link
 Write-Host "## 2. Retrieve DirectLine Secret and generate Link"
 $directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
+$success = $success -and $?
 $queryparams = "?bot=$($Bot.name)&key=$($directline.properties.properties.sites.key)"
 $webchathtmlfile = Get-ItemProperty -Path ..\WebChat\index.html
 
@@ -32,3 +36,6 @@ Write-Host -ForegroundColor Red "### Do not use this link if you want to go to p
 Write-Host -ForegroundColor Red "### https://h2floh.github.io/GeoDistributedAzureBot/WebChat/index.html$queryparams"
 Write-Host -ForegroundColor Yellow "###`n### Use this link on your local computer (if you cloned the repo to your local computer) in order to not expose your Directline Key:"
 Write-Host -ForegroundColor Yellow "### $($webchathtmlfile.FullName)$queryparams"
+
+# Return execution status
+exit $success

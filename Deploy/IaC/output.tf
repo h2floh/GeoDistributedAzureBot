@@ -17,9 +17,9 @@ output "webAppAccounts" {
 // This output will be used for subsequent destroy scripts
 output "trafficManager" {
   value = {
-       "name" = azurerm_traffic_manager_profile.Bot.name, 
-       "resource_group" = azurerm_traffic_manager_profile.Bot.resource_group_name,
-       "fqdn" = azurerm_traffic_manager_profile.Bot.fqdn
+       "name" = azurerm_traffic_manager_profile.GeoBot.name, 
+       "resource_group" = azurerm_traffic_manager_profile.GeoBot.resource_group_name,
+       "fqdn" = azurerm_traffic_manager_profile.GeoBot.fqdn
   }
 }
 
@@ -35,7 +35,7 @@ output "keyVault" {
 // This output will be used for subsequent destroy scripts
 output "bot" {
   value = {
-       "name" = azurerm_bot_channels_registration.GeoDistributedBot.name, 
-       "resource_group" = azurerm_bot_channels_registration.GeoDistributedBot.resource_group_name
+       "name" = azurerm_bot_channels_registration.GeoBot.name, 
+       "resource_group" = azurerm_bot_channels_registration.GeoBot.resource_group_name
   }
 }

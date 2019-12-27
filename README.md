@@ -62,95 +62,82 @@ Please report any problems you face under issues!
 
 ### Summary of steps
 
-1. Creation of AAD AppId and Secret (Bot Framework requires the App to be available for AAD all tenants)
-2. Issuing a SSL certificate for the `yourbotname`.trafficmanager.net domain, or your custom domain (WIP)
-3. Deploying the Infrastructure & Sample Bot
-4. Testing Bot and Failover
-5. Destroying the Infrastructure
-6. Deploy it again
+1. Deploying the Infrastructure & Sample Bot (includes import or creation of an SSL certificate)
+2. Testing Bot and Failover
+3. Destroying the Infrastructure (and saving your SSL certificate for reuse)
+4. Deploy it again
 
-### 1. Creation of AAD AppId
+### 1. Deploying the Infrastructure & Sample Bot
 
-Your bot will need a AAD Application registered as a prerequisite for Bot Framework.
+You can use the OneClickDeploy.ps1 script, several options are available. (TODO explaining md file)
 
-```bash
-# Create AAD application
-az ad app create --display-name <YourBotName> --available-to-other-tenants --reply-urls 'https://token.botframework.com/.auth/web/redirect'
+> :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name (with the current solution you can also issue a Let's Encrypt certificate for you custom domain - TODO explaining md file) and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
 
-# Retrieve Application Id
-$appId=$(az ad app list --display-name <YourBotName> --query '[0].appId' -o tsv)
+> :warning: Known issues/drawbacks:
+> - __the Bot Name parameter has to be unique__ since several Azure services will use it as prefix. Stick to lowercase no dashes and special chars and less than 20char. e.g. **myfirstname1234**
 
-# Create Application Password
-$appPassword=$(az ad app credential reset --id $appId --query 'password' -o tsv)
+> :information_source: You can change to `-AUTOAPPROVE $False` to accept / see the changes Terraform will do on your subscription. There are 3 to 5 executions so be prepared to enter yes in between. :information_source:
 
-# Echo AppId and Password/Secret
-echo "Your Bot's`nApp ID: $appId`nSecret: $appPassword"
-```
+> :information_source: Without changing the parameters the bot will deploy to three Azure regions:
+> - Global/central artifacts: __japaneast__
+> - Bot: __koreacentral__ and __southeastasia__
 
-### 2. Issuing a SSL Certificate
-
-You can use the script provided [here](LetsEncrypt\Archive). Searching another/better pattern to do it.
-
-For testing/demoing `Let's Encrypt` is a good way but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)).
-
-So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority).
-
-Known issues/drawbacks:
-
-- __the BotName has to be unique__ since several Azure services will use it as prefix. Stick to lowercase no dashes and special chars and less than 20char. e.g. **myfirstname1234**
-- due to a bug in the current setup a complex password with special characters **may not work** as expected
-- the Terraform script in [Step 3](#3-deploy-the-solution) was created before realizing the need of creating a trusted SSL certificate, we will already deploy the TrafficManager in this step. In order to match with the default values of the current Terraform script, the resource group `rg-geobot-global` and location `japaneast` are correct. If you modify these values of the Terraform script either delete it (the resource group) after Step 2 before running Step 3 or match the values accordingly
+> :information_source: To use a custom domain name you have just to set a CNAME entry in your DNS server pointing to the TrafficManager domain name (default `<botname>.trafficmanager.net`). See [here](https://docs.microsoft.com/en-us/azure/dns/dns-operations-recordsets-portal) on how to do it if you use Azure DNS.
 
 ```bash
-cd LetsEncrypt\Archive
+# Example 1: Issues a SSL certificate from Let's Encrypt for the TrafficManager Endpoint Domain
+# [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -AUTOAPPROVE $True
 
-az group create -name rg-geobot-global -location japaneast
+# Example 2: Issues a SSL certificate from Let's Encrypt for your custom domain
+# [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+ -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 
-.\IssueSSLCertificate.ps1 -YOUR_CERTIFICATE_EMAIL <YOUR_EMAIL> -YOUR_DOMAIN <BOT_NAME>.trafficmanager.net -BOT_NAME <BOT_NAME> -PFX_EXPORT_PASSWORD <PFX_EXPORT_PASSWORD>
+# Example 3: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+ -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True
+
+# Example 4: Imports an existing SSL certificate (PFX File) for your custom domain
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+ -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> `
+ -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 ```
 
-### 3. Deploy the Solution
+### 2. Testing Bot and Failover
 
-The solution will deploy to three Azure regions:
+If the deployment script runs without any failures it will output generated links for accessing the WebChat locally or from within this repo's GitPage.
 
-- Global/central artifacts: __japaneast__
-- Bot: __koreacentral__ and __southeastasia__
-
-You can easily expand the amount of regions by adding regions to the terraform variable [file](Deploy/IaC/variables.tf).
-The only requirement is that in that region both LUIS and AppService are available.
-
-Things to keep in mind:
-
-- __The BotName has to be the same as in Step 2.__
-- __The PFX password has to be the same as in Step 2.__
-```bash
-cd ..\..\Deploy
-
-.\OneClickDeploy.ps1 -BOT_NAME <bot> -MICROSOFT_APP_ID <appid> -MICROSOFT_APP_SECRET <appsecret> -PFX_FILE_LOCATION ..\LetsEncrypt\Archive\letsencrypt.pfx -PFX_FILE_PASSWORD <pfxpassword>
-```
-
-### 4. Testing Bot and Failover
-
-Grab your Directline key from the [Bot Channel Registration pane](https://docs.microsoft.com/en-us/azure/bot-service/bot-service-channel-connect-directline?view=azure-bot-service-4.0). 
-
+> :information_source: Alternatively you can grab your Directline key from the [Bot Channel Registration pane](https://docs.microsoft.com/en-us/azure/bot-service/bot-service-channel-connect-directline?view=azure-bot-service-4.0). 
 Use the provided Test Webchat static [index.html](WebChat\index.html) and paste following query arguments
 `?bot=<BOT_NAME>&key=<DIRECT_LINE_KEY>`
 
-Break something (removing LUIS Endpoint Key in luis.ai, Stop the WebApp your bot responds from)
 
-### 5. Destroying everything
+Last but not least break something (removing LUIS Endpoint Key in luis.ai, Stop the WebApp your bot responds from - TODO create sample scripts to do that)
 
-There are currently 2 dependency issues between how Azure works and how Terraform resolves dependencies while destroying an environment. In order to get a clean destroy we need to delete first the TrafficManager and the KeyVault and then going through the Terraform destroy phase. For Terraform, it needs the same parameters as in the __apply__ step, that is why you have to provide these details again.
+### 3. Destroying the Infrastructure (and saving your SSL certificate for reuse)
+
+With the execution of the below script you can save your SSL certificate and then delete all generated infrastructure:
 
 ```bash
-.\OneClickDestroy.ps1 -BOT_NAME <bot> -MICROSOFT_APP_ID <appid> -MICROSOFT_APP_SECRET <appsecret> -PFX_FILE_LOCATION ..\LetsEncrypt\Archive\letsencrypt.pfx -PFX_FILE_PASSWORD <pfxpassword>
+# Example 1: Exports the SSL certificate as PFX File and destroys the infrastructure
+.\OneClickDestroy.ps1 -BOT_NAME <yourbotname>
 ```
 
-__Remark: the AAD Application does not get deleted__
+### 4. Deploy it again
 
-### 6. Deploying again
+If you used the integrated Let's Encrypt certificate issuing please the saved certificate (it is valid for 3 months) for redeployments (if either you use the same Bot Name or Custom Domain for redeploy).
 
-Please reuse your AppID/Password and the Let's Encrypt certificate (it is valid for 3 months). So just skip [Step 1](#1-creation-of-aad-appid) and [Step 2](#2-issuing-a-ssl-certificate).
+```bash
+# Example 1: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+ -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True
+
+# Example 2: Imports an existing SSL certificate (PFX File) for your custom domain
+.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+ -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> `
+ -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
+```
 
 ## Learnings
 
@@ -166,7 +153,9 @@ There is no __one fits it all__ Infrastructure as Code tool
 
 Listing up various things from different domain/view angles:
 
-- Refactoring Deployment process to better include reuse of created SSL certificates and custom domain names, improve security aspects (no local download of PFX file) and some issues with resource naming in the current version
+- Include prerequisite validation check
+- Create additional documentation for all scripts and their options / deployment flow
+- Update scripts and Terraform to use remote state store based on Blob Storage
 - Extend Bot with Geo distributed Speech service
 - Include scripts to simulate different type of failures
 - Create a containerized version where AppService will be replaced with Azure Kubernetes Service or Azure Container Instances

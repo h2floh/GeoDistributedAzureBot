@@ -38,7 +38,7 @@ if ($PFX_FILE_PASSWORD -ne "") {
 
 if($? -eq $False) {
     Write-Host "### Error while importing PFX file, please check first if password is correct and file not corrupt..."
-    return $False
+    exit $False
 }
 
-return $True
+exit $True

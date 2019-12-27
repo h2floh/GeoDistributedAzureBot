@@ -26,16 +26,21 @@ param(
     [Parameter(HelpMessage="Deployment Zip File Name")]
     [string] $ZIP_FILE_NAME = "botnotselfcontained.zip"
 )
+# Helper var
+$success = $True
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
 # 1. Publish the .NET Core 2.2 Bot for correct runtime (see App Service Plan Linux or Windows)
 Write-Host "## 1. Publish the .NET Core 2.2 Bot for $TARGET_RUNTIME (check with App Service Plan)"
 dotnet publish $BOT_PROJECT_FILE -r $TARGET_RUNTIME -c $CONFIGURATION --no-self-contained
+$success = $success -and $?
 
 # 2. Compress publish folder to zip file
 Write-Host "## 2. Compress publish folder to zip file"
 Compress-Archive -Path $PUBLISH_ARTIFACTS -DestinationPath $ZIP_FILE_NAME -Force #Override if exists
+$success = $success -and $?
 
 # 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)
 Write-Host "## 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)"
@@ -50,4 +55,10 @@ $WebAppAccounts | ForEach {
 
     Write-Host "### - Deploy to $account"
     az webapp deployment source config-zip --src $ZIP_FILE_NAME --name $account --resource-group $rg
+    $success = $success -and $?
 }
+# Remove zip file
+Remove-Item -Path $ZIP_FILE_NAME
+
+# Return execution status
+exit $success

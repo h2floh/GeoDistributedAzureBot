@@ -12,6 +12,9 @@
 param(
 
 )
+# Helper var
+$success = $True
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
@@ -22,9 +25,15 @@ $TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json traffi
 # 2. Delete all TrafficManager endpoints
 Write-Host "## 2. Delete all TrafficManager endpoints"
 $endpoints = $(az network traffic-manager endpoint list --resource-group $TrafficManager.resource_group --profile-name $TrafficManager.name) | ConvertFrom-Json
+$success = $success -and $?
+
 # Execute delete command for each endpoint
 $endpoints.foreach({ 
     $type = $_.type.split("/")
     #Write-Host "az network traffic-manager endpoint delete --resource-group $($TrafficManager.resource_group) --profile-name $($TrafficManager.name) --type $($type[2]) --name $($_.name)"
     az network traffic-manager endpoint delete --resource-group $TrafficManager.resource_group --profile-name $TrafficManager.name --type $type[2] --name $_.name
+    $success = $success -and $?
 })
+
+# Return execution status
+exit $success

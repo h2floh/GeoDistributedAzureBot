@@ -6,11 +6,11 @@ provider "azurerm" {
 
 # Configure the Microsoft Azure Active Directory Provider
 provider "azuread" {
-  version = "~>0.3.0"
+  version = "~>0.7.0"
 }
 
 provider "random" {
-  version = "~>0"
+  version = "~>2.2"
 }
 
 terraform {

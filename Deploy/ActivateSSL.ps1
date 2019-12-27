@@ -23,13 +23,16 @@ param(
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
+# Helper var
+$success = $True
+$webAppsVariableFile = "webAppVariable.tfvars.json"
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
 $content = '{ "azure_webApps" : ' + $(terraform output -state=".\IaC\terraform.tfstate" -json webAppAccounts) + '}'
-Set-Content -Path ".\SSLActivation\webAppVariable.tfvars.json" -Value $content
+Set-Content -Path ".\SSLActivation\$webAppsVariableFile" -Value $content
 $KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
 $TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json trafficManager | ConvertFrom-Json
 $Bot = terraform output -state=".\IaC\terraform.tfstate" -json bot | ConvertFrom-Json
@@ -53,11 +56,18 @@ terraform init
 terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
 -var "your_domain=$YOUR_DOMAIN" `
 -var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
--var-file="webAppVariable.tfvars.json" `
+-var-file="$webAppsVariableFile" `
 -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" $AUTOFLAG
+$success = $success -and $?
 Set-Location ..
+
+# CleanUp
+Remove-Item -Path ".\SSLActivation\$webAppsVariableFile"
 
 # 3. Update Bot Endpoint
 Write-Host "## 3. Update Bot Endpoint"
 az bot update --resource-group $Bot.resource_group --name $Bot.name --endpoint "https://$YOUR_DOMAIN/api/messages"
+$success = $success -and $?
 
+# Return execution status
+exit $success

@@ -18,11 +18,11 @@ param(
     [ValidatePattern("^\w+$")]
     [string] $BOT_NAME,
 
-    [Parameter(Mandatory=$true, HelpMessage="AAD AppId for Bot")]
-    [string] $MICROSOFT_APP_ID,
+    [Parameter(HelpMessage="Regions to deploy the Bot to")]
+    [string[]] $BOT_REGIONS = @("koreacentral", "southeastasia"),
 
-    [Parameter(Mandatory=$true, HelpMessage="AAD AppId Secret")]
-    [string] $MICROSOFT_APP_SECRET,
+    [Parameter(HelpMessage="Region used for global services")]
+    [string] $BOT_GLOBAL_REGION = "japaneast",
 
     # Only needed in Issuing Mode (CreateSSL.ps1)
     [Parameter(HelpMessage="Mail to be associated with Let's Encrypt certificate")]
@@ -47,6 +47,9 @@ param(
     [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
     [bool] $RERUN = $False
 )
+# Helper var
+$success = $True
+
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
 
@@ -56,18 +59,41 @@ $validationresult = .\ValidateParameter.ps1 -BOT_NAME $BOT_NAME -YOUR_CERTIFICAT
 if ($validationresult)
 {
     # Execute first Terraform to create the infrastructure
-    .\DeployInfrastructure -BOT_NAME $BOT_NAME -MICROSOFT_APP_ID $MICROSOFT_APP_ID -MICROSOFT_APP_SECRET $MICROSOFT_APP_SECRET -AUTOAPPROVE $AUTOAPPROVE
+    .\DeployInfrastructure -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
+    $success = $success -and $LASTEXITCODE
 
     # Execute LUIS Train & Deploy
-    .\DeployLUIS.ps1
-
+    if ($success)
+    {
+        .\DeployLUIS.ps1
+        $success = $success -and $LASTEXITCODE
+    }
+    
     # Deploy the Bot
-    .\DeployBot.ps1
+    if ($success)
+    {
+        .\DeployBot.ps1
+        $success = $success -and $LASTEXITCODE
+    }
 
     # Import or issue a SSL certificate and activate it in WebApps and connect WebApps to TrafficManager
-    .\CreateOrImportSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN -ALREADYCONFIRMED $True
+    if ($success)
+    {
+        .\CreateOrImportSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN -ALREADYCONFIRMED $True
+        $success = $success -and $LASTEXITCODE
+    }
 
     # Display the WebChat link (local & online version)
-    .\RetrieveWebChatLink.ps1
+    if ($success)
+    {
+        .\RetrieveWebChatLink.ps1
+        $success = $success -and $LASTEXITCODE
+    }
+
+    # Check execution process
+    if ($success -eq $False)
+    {
+        Write-Host -ForegroundColor Red "`n`n# ERROR Occured while execution. Please check your output for errors and rerun the script or scriptlets.`n# In case of this script ($($MyInvocation.MyCommand.Name)) include the -RERUN `$True flag."
+    }
 }
 
