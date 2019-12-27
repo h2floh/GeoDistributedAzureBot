@@ -49,3 +49,10 @@ variable "bot_sku" {
 variable "webapp_resource_principal_object_id" {
   default = "f8daea97-62e7-4026-becf-13c2ea98e8b4"
 }
+
+// DNS Postfix for WebApps
+resource "random_string" "dnspostfix" {
+  length = 10
+  special = false
+  upper = false
+}

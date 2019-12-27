@@ -26,7 +26,10 @@ param(
     [bool] $AUTOAPPROVE = $False,
 
     [Parameter(HelpMessage="Flag to determine if run from within OneClickDeploy.ps1")]
-    [bool] $ALREADYCONFIRMED = $False
+    [bool] $ALREADYCONFIRMED = $False,
+
+    [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
+    [bool] $RERUN = $False
 )
 
 # Check Bot Name, if provided
@@ -36,7 +39,8 @@ if ($BOT_NAME -ne "")
     {
         Write-Host "### ERROR, Bot Name will be used for a lot of DNS prefixes and services please stick to alphanumeric between 8 and 20 characters."
         return $False
-    } else {
+    } 
+    elseif ($RERUN -eq $False) {
         # Check service name availability
         $dnscheck = $True
         # CosmosDB

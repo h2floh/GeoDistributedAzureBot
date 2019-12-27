@@ -41,7 +41,10 @@ param(
     [bool] $ALREADYCONFIRMED = $False,
 
     [Parameter(HelpMessage="Force Reimport or Reissuing if certificate already exists")]
-    [bool] $FORCE = $False
+    [bool] $FORCE = $False,
+
+    [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
+    [bool] $RERUN = $False
 )
 # Tell who you are
 Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
@@ -80,7 +83,7 @@ if ($validationresult -and (-not $sslexists))
     else {
         # Issuing Mode
         Write-Host "### Issuing Mode, issue new certificate and directly upload it to KeyVault from within a container"
-        .\CreateSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME -AUTOAPPROVE $AUTOAPPROVE -PRODUCTION 0
+        .\CreateSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME -AUTOAPPROVE $AUTOAPPROVE
     }
     
     if ($success -eq $True)
@@ -92,5 +95,11 @@ if ($validationresult -and (-not $sslexists))
 
 }
 elseif ($sslexists -eq $True) {
-    Write-Host "### ERROR, SSL Certificate with KeyVault name-key '$KEYVAULT_CERT_NAME' already exists.`n### If you want to recreate/upload a new one please use -FORCE `$True parameter."
+    Write-Host "### WARNING, SSL Certificate with KeyVault name-key '$KEYVAULT_CERT_NAME' already exists.`n### If you want to recreate/upload a new one please use -FORCE `$True parameter."
+
+    if ($RERUN) {
+        # 1. Activate SSL Endpoint
+        Write-Host "## 1. Activate SSL Endpoints"
+        .\ActivateSSL.ps1 -YOUR_DOMAIN $YOUR_DOMAIN -AUTOAPPROVE $AUTOAPPROVE
+    }
 }

@@ -42,4 +42,34 @@ resource "azurerm_traffic_manager_endpoint" "webAppTMEndpoint" {
   profile_name        = var.trafficmanager_name
   type                = "azureEndpoints"
   target_resource_id  = data.azurerm_app_service.WebApps[each.key].id
+
+  depends_on = [
+    azurerm_traffic_manager_profile.Bot
+  ]
+}
+
+// Traffic Manager Service for discovering Bot Endpoint (or be the endpoint without custom domain)
+resource "azurerm_traffic_manager_profile" "Bot" {
+  name                = var.trafficmanager_name
+  resource_group_name = var.trafficmanager_rg
+
+  traffic_routing_method = "Performance"
+
+  dns_config {
+    relative_name = var.trafficmanager_name
+    ttl           = 100
+  }
+
+  monitor_config {
+    protocol                     = "https"
+    port                         = 443
+    path                         = "/healthcheck"
+    interval_in_seconds          = 30
+    timeout_in_seconds           = 9
+    tolerated_number_of_failures = 0
+  }
+
+  tags = {
+    region = "global"
+  }
 }

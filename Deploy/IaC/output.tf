@@ -31,3 +31,11 @@ output "keyVault" {
        "location" = azurerm_key_vault.GeoBot.location
   }
 }
+
+// This output will be used for subsequent destroy scripts
+output "bot" {
+  value = {
+       "name" = azurerm_bot_channels_registration.GeoDistributedBot.name, 
+       "resource_group" = azurerm_bot_channels_registration.GeoDistributedBot.resource_group_name
+  }
+}

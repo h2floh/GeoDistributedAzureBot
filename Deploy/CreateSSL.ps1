@@ -54,8 +54,9 @@ if ($YOUR_DOMAIN -eq "")
     $YOUR_DOMAIN = $TrafficManager.fqdn
 } 
 elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
-    # create dummy endpoint in TrafficManager (this is needed to ensure a resolving DNS)
-    az network traffic-manager endpoint create --name dummy --type externalEndpoints --profile-name $TrafficManager.name --resource-group $TrafficManager.resource_group --endpoint-location koreacentral --target www.bing.com > $null
+    # create dummy endpoint in TrafficManager (this is needed to ensure a resolving DNS), change healthcheck to 80 HTTP (will succeed for Bing with HTTP redirect and work for standalone Certbot)
+    az network traffic-manager profile update --name $TrafficManager.name --resource-group $TrafficManager.resource_group --path "/" --port 80 --protocol "HTTP" > $null
+    az network traffic-manager endpoint create --profile-name $TrafficManager.name --resource-group $TrafficManager.resource_group --name dummy --type externalEndpoints --endpoint-location koreacentral --target www.bing.com > $null
 
     # If a custom domain is set check if CNAME to TrafficManager FQDN is set
     $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
@@ -70,6 +71,7 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
 
     # delete dummy endpoint again
     az network traffic-manager endpoint delete --name dummy --type externalEndpoints --profile-name $TrafficManager.name --resource-group $TrafficManager.resource_group > $null
+    # TrafficManager healthcheck profile will be changed back in SSLActivate Terraform (ActivateSSL.ps1)
 }
 
 Set-Location SSLIssuing

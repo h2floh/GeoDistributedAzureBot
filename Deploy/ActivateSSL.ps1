@@ -6,6 +6,7 @@
 #
 # 1. Import information from previous Terraform runs
 # 2. Terraform execution to activate certificate and map TrafficManager endpoints
+# 3. Update Bot Endpoint
 #
 # After the script is successfully executed the bot should be in a usable from WebChat
 #
@@ -31,8 +32,9 @@ $content = '{ "azure_webApps" : ' + $(terraform output -state=".\IaC\terraform.t
 Set-Content -Path ".\SSLActivation\webAppVariable.tfvars.json" -Value $content
 $KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
 $TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$Bot = terraform output -state=".\IaC\terraform.tfstate" -json bot | ConvertFrom-Json
 
-# 2. Execute Terraform
+# 2. Terraform execution to activate certificate and map TrafficManager endpoints
 Write-Host "## 2. Terraform execution to activate certificate and map TrafficManager endpoints"
 if ($AUTOAPPROVE -eq $True)
 {
@@ -54,4 +56,8 @@ terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyV
 -var-file="webAppVariable.tfvars.json" `
 -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" $AUTOFLAG
 Set-Location ..
+
+# 3. Update Bot Endpoint
+Write-Host "## 3. Update Bot Endpoint"
+az bot update --resource-group $Bot.resource_group --name $Bot.name --endpoint "https://$YOUR_DOMAIN/api/messages"
 

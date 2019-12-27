@@ -152,6 +152,16 @@ __Remark: the AAD Application does not get deleted__
 
 Please reuse your AppID/Password and the Let's Encrypt certificate (it is valid for 3 months). So just skip [Step 1](#1-creation-of-aad-appid) and [Step 2](#2-issuing-a-ssl-certificate).
 
+## Learnings
+
+There is no __one fits it all__ Infrastructure as Code tool
+
+- While Terraform is good for the loop over each region, it is not very good in multi step scenarios including waiting for a resource/artifact to be created
+- Terraform also is less optimal if you want to introduce architecture choices
+- For waiting I used script loops together with Azure CLI commands
+- Terraform AzureRM provider still lacks some update features. E.g. there is a need to update only the Bot's endpoint in a subsequent Terraform execution, but this is not possible because there is no data source for Bot, so we would have to keep track of all parameters. In such cases we used Azure CLI for updating.
+- Terraform is very convenient if you want to destroy the environment again (demos, non frequent reoccurring tasks)
+
 ## Open points and next steps
 
 Listing up various things from different domain/view angles:
