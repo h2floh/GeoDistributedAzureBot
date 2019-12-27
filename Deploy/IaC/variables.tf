@@ -2,22 +2,6 @@
 variable "bot_name" {
 }
 
-// Creation of AAD Application has to be done apriori
-variable "microsoft_app_id" {
-}
-
-// Creation of AAD Application's Secret has to be done apriori
-variable "microsoft_app_secret" {
-}
-
-// Creation of SSL PFX has to be done apriori
-variable "pfx_certificate_file_location" {
-}
-
-// Creation of SSL PFX export password has to be done apriori
-variable "pfx_certificate_password" {
-}
-
 // These is the list of regions in which you will deploy the Bot
 // each Azure region which provides AppService WebApps and LUIS is possible
 // Check availability of Language Understanding and WebApps here:
@@ -56,4 +40,26 @@ variable "bot_sku" {
 // App Service WebApp Principal's Object ID
 variable "webapp_resource_principal_object_id" {
   default = "f8daea97-62e7-4026-becf-13c2ea98e8b4"
+}
+
+// DNS Postfix for WebApps
+resource "random_string" "dnspostfix" {
+  length  = 10
+  special = false
+  upper   = false
+}
+
+// Azure Active Directoy Application password
+resource "random_password" "aadapppassword" {
+  length      = 24
+  min_upper   = 1
+  min_lower   = 1
+  min_numeric = 1
+  min_special = 1
+  special     = true
+}
+
+// Azure Active Directory Application password expiration date
+variable "azuread_application_password_end_date" {
+  default = "2030-12-31T00:00:00.00Z"
 }

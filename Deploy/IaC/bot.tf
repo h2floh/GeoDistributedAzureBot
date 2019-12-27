@@ -1,6 +1,6 @@
 // Resource Group for global and central services
-resource "azurerm_resource_group" "Bot" {
-  name     = "rg-geobot-global"
+resource "azurerm_resource_group" "GeoBot" {
+  name     = "rg-${var.bot_name}-global"
   location = var.global_region
 
   tags = {
@@ -10,9 +10,9 @@ resource "azurerm_resource_group" "Bot" {
 }
 
 // Traffic Manager Service for discovering Bot Endpoint (or be the endpoint without custom domain)
-resource "azurerm_traffic_manager_profile" "Bot" {
+resource "azurerm_traffic_manager_profile" "GeoBot" {
   name                = var.bot_name
-  resource_group_name = azurerm_resource_group.Bot.name
+  resource_group_name = azurerm_resource_group.GeoBot.name
 
   traffic_routing_method = "Performance"
 
@@ -22,46 +22,45 @@ resource "azurerm_traffic_manager_profile" "Bot" {
   }
 
   monitor_config {
-    protocol                     = "https"
-    port                         = 443
-    path                         = "/healthcheck"
+    protocol                     = "http"
+    port                         = 80
+    path                         = "/"
     interval_in_seconds          = 30
     timeout_in_seconds           = 9
-    tolerated_number_of_failures = 2
+    tolerated_number_of_failures = 3
   }
 
   tags = {
-    environment = var.environment,
     region = "global"
   }
 }
 
 // Central Application Insight for all Bot regions
-resource "azurerm_application_insights" "Bot" {
+resource "azurerm_application_insights" "GeoBot" {
   name                = var.bot_name
-  location            = azurerm_resource_group.Bot.location
-  resource_group_name = azurerm_resource_group.Bot.name
+  location            = azurerm_resource_group.GeoBot.location
+  resource_group_name = azurerm_resource_group.GeoBot.name
   application_type    = "web"
 }
 
 // Bot Channel Registration (this is part of the Azure Bot Framework Service)
-resource "azurerm_bot_channels_registration" "GeoDistributedBot" {
+resource "azurerm_bot_channels_registration" "GeoBot" {
   name                = var.bot_name
   location            = "global"
-  resource_group_name = azurerm_resource_group.Bot.name
+  resource_group_name = azurerm_resource_group.GeoBot.name
   sku                 = var.bot_sku
-  microsoft_app_id    = var.microsoft_app_id
+  microsoft_app_id    = azuread_application.GeoBot.application_id
   // Endpoint will be changed/customized for Custom Domain in 2nd Step
-  endpoint            = "https://${azurerm_traffic_manager_profile.Bot.fqdn}/api/messages" 
-  developer_app_insights_application_id = azurerm_application_insights.Bot.app_id
-  developer_app_insights_key = azurerm_application_insights.Bot.instrumentation_key
+  endpoint            = "https://${azurerm_traffic_manager_profile.GeoBot.fqdn}/api/messages" 
+  developer_app_insights_application_id = azurerm_application_insights.GeoBot.app_id
+  developer_app_insights_key = azurerm_application_insights.GeoBot.instrumentation_key
 }
 
 // Central Configuration Store, this could be potentially spread between regions and or used together with Azure Configuration Services (not demonstrated)
 resource "azurerm_key_vault" "GeoBot" {
   name                        = var.bot_name
-  location                    = azurerm_resource_group.Bot.location
-  resource_group_name         = azurerm_resource_group.Bot.name
+  location                    = azurerm_resource_group.GeoBot.location
+  resource_group_name         = azurerm_resource_group.GeoBot.name
   enabled_for_disk_encryption = false
   tenant_id                   = data.azurerm_client_config.current.tenant_id
 
@@ -115,32 +114,10 @@ resource "azurerm_key_vault_access_policy" "webAppPrincipal" {
   ]
 }
 
-// Saving the Bot's App ID in KeyVault (for use by Bot Application)
-resource "azurerm_key_vault_secret" "MSAppId" {
-  name         = "MicrosoftAppId"
-  value        = var.microsoft_app_id
-  key_vault_id = azurerm_key_vault.GeoBot.id
-
-  depends_on = [
-    azurerm_key_vault_access_policy.currentClient
-  ]
-}
-
-// Saving the Bot's App Secret  in KeyVault (for use by Bot Application)
-resource "azurerm_key_vault_secret" "MSAppSecret" {
-  name         = "MicrosoftAppPassword"
-  value        = var.microsoft_app_secret
-  key_vault_id = azurerm_key_vault.GeoBot.id
-
-  depends_on = [
-    azurerm_key_vault_access_policy.currentClient
-  ]
-}
-
 // Saving the AppInsight ID in KeyVault (for use by Bot Application)
 resource "azurerm_key_vault_secret" "AppInsightId" {
   name         = "AppInsightId"
-  value        = azurerm_application_insights.Bot.app_id
+  value        = azurerm_application_insights.GeoBot.app_id
   key_vault_id = azurerm_key_vault.GeoBot.id
 
   depends_on = [
@@ -151,7 +128,7 @@ resource "azurerm_key_vault_secret" "AppInsightId" {
 // Saving the AppInsight Instrumentation Key in KeyVault (for use by Bot Application)
 resource "azurerm_key_vault_secret" "AppInsightInstrumentationKey" {
   name         = "ApplicationInsights--InstrumentationKey"
-  value        = azurerm_application_insights.Bot.instrumentation_key
+  value        = azurerm_application_insights.GeoBot.instrumentation_key
   key_vault_id = azurerm_key_vault.GeoBot.id
 
   depends_on = [
@@ -185,7 +162,7 @@ resource "azurerm_key_vault_secret" "LUISAuthoringEndpoint" {
 resource "azurerm_cognitive_account" "LUISAuthoring" {
   name                = "${var.bot_name}LUISAuthoring"
   location            = "westus" //see https://docs.microsoft.com/en-us/azure/cognitive-services/luis/luis-reference-regions
-  resource_group_name = azurerm_resource_group.Bot.name
+  resource_group_name = azurerm_resource_group.GeoBot.name
   kind                = "LUIS.Authoring"
 
   sku {
@@ -242,7 +219,7 @@ resource "azurerm_key_vault_secret" "CosmosDBCollection" {
 resource "azurerm_cosmosdb_account" "botdb" {
   name                = var.bot_name
   location            = var.azure_bot_regions[0].name
-  resource_group_name = azurerm_resource_group.Bot.name
+  resource_group_name = azurerm_resource_group.GeoBot.name
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
 
@@ -286,30 +263,3 @@ resource "azurerm_cosmosdb_sql_container" "botdb" {
   partition_key_path  = "/id"
 }
 
-// Upload and Register the SSL Certificate into KeyVault
-resource "azurerm_key_vault_certificate" "TrafficManager" {
-  name         = "TrafficManagerSSL"
-  key_vault_id = azurerm_key_vault.GeoBot.id
-
-  certificate {
-    contents = filebase64(var.pfx_certificate_file_location)
-    password = var.pfx_certificate_password
-  }
-
-  certificate_policy {
-    issuer_parameters {
-      name = "Unknown" // see https://github.com/terraform-providers/terraform-provider-azurerm/blob/master/examples/app-service-certificate/stored-in-keyvault/main.tf
-    }
-
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = false
-    }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
-  }
-}

@@ -10,15 +10,16 @@ output "luisAccounts" {
 output "webAppAccounts" {
   value = [
     for instance in azurerm_app_service.Region:
-    { "name" = instance.name, "resource_group" = instance.resource_group_name }
+    { name = instance.name, resource_group = instance.resource_group_name, location = instance.location }
   ]
 }
 
 // This output will be used for subsequent destroy scripts
 output "trafficManager" {
   value = {
-       "name" = azurerm_traffic_manager_profile.Bot.name, 
-       "resource_group" = azurerm_traffic_manager_profile.Bot.resource_group_name 
+       "name" = azurerm_traffic_manager_profile.GeoBot.name, 
+       "resource_group" = azurerm_traffic_manager_profile.GeoBot.resource_group_name,
+       "fqdn" = azurerm_traffic_manager_profile.GeoBot.fqdn
   }
 }
 
@@ -26,6 +27,15 @@ output "trafficManager" {
 output "keyVault" {
   value = {
        "name" = azurerm_key_vault.GeoBot.name, 
-       "resource_group" = azurerm_key_vault.GeoBot.resource_group_name 
+       "resource_group" = azurerm_key_vault.GeoBot.resource_group_name,
+       "location" = azurerm_key_vault.GeoBot.location
+  }
+}
+
+// This output will be used for subsequent destroy scripts
+output "bot" {
+  value = {
+       "name" = azurerm_bot_channels_registration.GeoBot.name, 
+       "resource_group" = azurerm_bot_channels_registration.GeoBot.resource_group_name
   }
 }

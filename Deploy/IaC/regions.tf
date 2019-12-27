@@ -8,24 +8,13 @@ locals{
 resource "azurerm_resource_group" "Region" {
   for_each = local.azure_bot_regions
 
-  name     = "rg-geobot-region-${each.key}"
+  name     = "rg-${var.bot_name}-region-${each.key}"
   location = each.key
 
   tags = {
     environment = var.environment,
     region = each.key
   }
-}
-
-// Add an Endpoint to TrafficManager for every WebApp the bot will be deployed to
-resource "azurerm_traffic_manager_endpoint" "Region" {
-  for_each = local.azure_bot_regions
-
-  name                = each.key
-  resource_group_name = azurerm_traffic_manager_profile.Bot.resource_group_name
-  profile_name        = azurerm_traffic_manager_profile.Bot.name
-  type                = "azureEndpoints"
-  target_resource_id  = azurerm_app_service.Region[each.key].id
 }
 
 // Create an AppService Plan (Standard1) in every region the Bot will be deployed to
@@ -47,7 +36,7 @@ resource "azurerm_app_service_plan" "Region" {
 resource "azurerm_app_service" "Region" {
   for_each = local.azure_bot_regions
 
-  name                = "${each.key}${var.bot_name}"
+  name                = "${each.key}${random_string.dnspostfix.result}"
   location            = azurerm_app_service_plan.Region[each.key].location
   resource_group_name = azurerm_resource_group.Region[each.key].name
   app_service_plan_id = azurerm_app_service_plan.Region[each.key].id
@@ -143,34 +132,3 @@ resource "azurerm_cognitive_account" "LUISRegion" {
   }
 }
 
-// Load/Map the Azure KeyVault SSL Certificate with every WebApp
-resource "azurerm_app_service_certificate" "TrafficManager" {
-  for_each = local.azure_bot_regions
-
-  name                = "trafficmanager"
-  location            = azurerm_resource_group.Region[each.key].location
-  resource_group_name = azurerm_resource_group.Region[each.key].name
-  key_vault_secret_id = azurerm_key_vault_certificate.TrafficManager.secret_id
-
-  depends_on = [
-    azurerm_key_vault_access_policy.Region,
-    azurerm_key_vault_access_policy.currentClient,
-    azurerm_key_vault_access_policy.webAppPrincipal
-  ]
-}
-
-// Map the SSL certificate with the TrafficManager hostname in every WebApp
-resource "azurerm_app_service_custom_hostname_binding" "TrafficManager" {
-  for_each = local.azure_bot_regions
-
-  hostname            = azurerm_traffic_manager_profile.Bot.fqdn
-  app_service_name    = azurerm_app_service.Region[each.key].name
-  resource_group_name = azurerm_resource_group.Region[each.key].name
-  ssl_state           = "SniEnabled"
-  thumbprint          = azurerm_app_service_certificate.TrafficManager[each.key].thumbprint
-
-  depends_on = [
-    azurerm_traffic_manager_endpoint.Region
-  ]
-
-}
