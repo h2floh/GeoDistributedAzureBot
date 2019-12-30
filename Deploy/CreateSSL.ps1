@@ -21,8 +21,8 @@ param(
     [Parameter(HelpMessage="The domain (CN) name for the SSL certificate")]
     [string] $YOUR_DOMAIN,
 
-    [Parameter(HelpMessage="Flag if production or stage of Let's Encrypt will be used. 0 -> Staging 1 -> Production")]
-    [int] $PRODUCTION = 1,
+    [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
+    [string] $LETS_ENCRYPT_STAGING = $False,
 
     [Parameter(HelpMessage="Terraform Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
     [bool] $AUTOAPPROVE = $False,
@@ -38,24 +38,27 @@ $success = $True
 $loopcount = 0
 $waitretrysec = 10
 $loopmax = (60 * $MAX_WAIT_TIME_MIN ) / $waitretrysec
-
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+$terraformFolder = "SSLIssuing"
+$iaCFolder = "IaC"
+if ($LETS_ENCRYPT_STAGING) {
+    $PRODUCTION = 0
+} else {
+    $PRODUCTION = 1
+}
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
-$TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$KeyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$success = $success -and $?
+$TrafficManager = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$success = $success -and $?
 
 # 2. Apply Terraform for SSLIssuing
 Write-Host "## 2. Apply Terraform for SSLIssuing"
-
-if ($AUTOAPPROVE -eq $True)
-{
-    $AUTOFLAG = "-auto-approve"
-} else {
-    $AUTOFLAG = ""
-}
 
 if ($YOUR_DOMAIN -eq "")
 {
@@ -68,15 +71,17 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
     az network traffic-manager endpoint create --profile-name $TrafficManager.name --resource-group $TrafficManager.resource_group --name dummy --type externalEndpoints --endpoint-location koreacentral --target www.bing.com > $null
 
     # If a custom domain is set check if CNAME to TrafficManager FQDN is set
-    $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
-
-    while ((($? -eq $False) -or (($resolved.NameHost | Where-Object -FilterScript { $_ -eq $TrafficManager.fqdn }) -ne $TrafficManager.fqdn)) -and ($loopcount -le $loopmax))
+    # Not working in PowerShellCore: $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
+    # Changing to nslookup
+    $resolved = nslookup $FQDN 2> $null
+    while (((($resolved | Select-String $TrafficManager.fqdn).Length -eq 0)) -and ($loopcount -le $loopmax))
     {
         $loopcount++
         Write-Host "### WARNING, there is no CNAME entry for domain '$YOUR_DOMAIN' pointing to '$($TrafficManager.fqdn)'."
         Write-Host "### Please check your DNS entry, or create the missing CNAME entry. Sleeping for $waitretrysec seconds and try again..."
         Start-Sleep -s $waitretrysec
-        $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
+        #$resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
+        $resolved = nslookup $FQDN 2> $null
     } 
 
     # delete dummy endpoint again
@@ -84,15 +89,16 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
     # TrafficManager healthcheck profile will be changed back in SSLActivate Terraform (ActivateSSL.ps1)
 }
 
-Set-Location SSLIssuing
-terraform init
+# Terraform Init
+terraform init "$(Get-ScriptPath)/$terraformFolder"
+# Terraform Apply
 terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
 -var "your_certificate_email=$YOUR_CERTIFICATE_EMAIL"  -var "your_domain=$YOUR_DOMAIN" `
 -var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
 -var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
--var "keyVault_cert_name=$KEYVAULT_CERT_NAME" -var "production=$PRODUCTION" $AUTOFLAG
+-var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
+-var "production=$PRODUCTION" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
 $success = $success -and $?
-Set-Location ..
 
 # 3. Check for creation of certificate
 Write-Host "## 3. Check for availability of certificate"
@@ -110,15 +116,18 @@ Write-Host "## Certificate found!"
 
 # 4. Destroy Terraform SSLIssuing
 Write-Host "## 4. Destroy unneccessary infrastructure again"
-Set-Location SSLIssuing
-terraform init
+
+# Terraform Init (should not be needed)
+terraform init "$(Get-ScriptPath)/$terraformFolder"
+# Terraform Destroy
 terraform destroy -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
 -var "your_certificate_email=$YOUR_CERTIFICATE_EMAIL"  -var "your_domain=$YOUR_DOMAIN" `
 -var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
 -var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
--var "keyVault_cert_name=$KEYVAULT_CERT_NAME" -var "production=$PRODUCTION" $AUTOFLAG
+-var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
+-var "production=$PRODUCTION" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
 $success = $success -and $?
-Set-Location ..
 
 # Return execution status
+Write-ExecutionStatus -success $success
 exit $success

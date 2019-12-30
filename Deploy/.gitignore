@@ -4,3 +4,5 @@ body.json
 botnotselfcontained.zip
 # Ignore Terraform tfvars
 *.tfvars.*
+# Ignore Terraform plan files (we just use this notation since internet search didn't brought any ideas)
+*.tfplan

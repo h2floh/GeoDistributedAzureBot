@@ -25,35 +25,30 @@ param(
     [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
     [bool] $AUTOAPPROVE = $False
 )
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 # Helper var
 $success = $True
-$azureBotRegions = "azure_bot_regions.tfvars.json"
+$terraformFolder = "IaC"
+$azureBotRegions = "$(Get-ScriptPath)/$terraformFolder/azure_bot_regions.tfvars.json"
 
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # Execute first Terraform to create the infrastructure
 Write-Host "## 1. Deploy Infrastructure with Terraform"
-Set-Location IaC
-
-if ($AUTOAPPROVE)
-{
-    $AUTOFLAG = "-auto-approve"
-} else {
-    $AUTOFLAG = ""
-}
 
 # Create Variable file for Terraform
-..\CreateRegionVariableFile.ps1 -FILENAME $azureBotRegions -BOT_REGIONS $BOT_REGIONS
-$success = $success -and $LASTEXITCODE
+$result = Set-RegionalVariableFile -FILENAME $azureBotRegions -BOT_REGIONS $BOT_REGIONS
+$success = $success -and $result
 
-terraform init
-terraform apply -var "bot_name=$BOT_NAME" -var "global_region=$BOT_GLOBAL_REGION" -var-file="$azureBotRegions" $AUTOFLAG
+terraform init "$(Get-ScriptPath)/$terraformFolder"
+terraform apply -var "bot_name=$BOT_NAME" -var "global_region=$BOT_GLOBAL_REGION" -var-file="$azureBotRegions" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
 $success = $success -and $?
 
 # Clean Up
-Remove-Item -Path $azureBotRegions 
-Set-Location ..
+Remove-Item -Path $azureBotRegions
 
 # Check successful execution
+Write-ExecutionStatus -success $success
 exit $success
