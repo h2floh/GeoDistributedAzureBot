@@ -23,46 +23,51 @@ param(
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 # Helper var
 $success = $True
-$webAppsVariableFile = "webAppVariable.tfvars.json"
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+$terraformFolder = "SSLActivation"
+$iaCFolder = "IaC"
+$webAppsVariableFile = "$(Get-ScriptPath)/$terraformFolder/webAppVariable.tfvars.json"
+
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$content = '{ "azure_webApps" : ' + $(terraform output -state=".\IaC\terraform.tfstate" -json webAppAccounts) + '}'
-Set-Content -Path ".\SSLActivation\$webAppsVariableFile" -Value $content
-$KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
-$TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json trafficManager | ConvertFrom-Json
-$Bot = terraform output -state=".\IaC\terraform.tfstate" -json bot | ConvertFrom-Json
+$content = '{ "azure_webApps" : ' + $(terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json webAppAccounts) + '}'
+$success = $success -and $?
+$KeyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$success = $success -and $?
+$TrafficManager = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$success = $success -and $?
+$Bot = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json bot | ConvertFrom-Json
+$success = $success -and $?
+
+# Set Variable File for webApps
+Set-Content -Path "$webAppsVariableFile" -Value $content
+
 
 # 2. Terraform execution to activate certificate and map TrafficManager endpoints
 Write-Host "## 2. Terraform execution to activate certificate and map TrafficManager endpoints"
-if ($AUTOAPPROVE -eq $True)
-{
-    $AUTOFLAG = "-auto-approve"
-} else {
-    $AUTOFLAG = ""
-}
-
 if ($YOUR_DOMAIN -eq "")
 {
     $YOUR_DOMAIN = $TrafficManager.fqdn
 }
 
-Set-Location SSLActivation
-terraform init
+# Terraform init
+terraform init "$(Get-ScriptPath)/$terraformFolder"
+# Terraform apply
 terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
--var "your_domain=$YOUR_DOMAIN" `
--var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
--var-file="$webAppsVariableFile" `
--var "keyVault_cert_name=$KEYVAULT_CERT_NAME" $AUTOFLAG
+-var "your_domain=$YOUR_DOMAIN" -var "trafficmanager_name=$($TrafficManager.name)" `
+-var "trafficmanager_rg=$($TrafficManager.resource_group)" `
+-var-file="$webAppsVariableFile" -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
+-state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
 $success = $success -and $?
-Set-Location ..
 
 # CleanUp
-Remove-Item -Path ".\SSLActivation\$webAppsVariableFile"
+Remove-Item -Path "$webAppsVariableFile"
 
 # 3. Update Bot Endpoint
 Write-Host "## 3. Update Bot Endpoint"
@@ -70,4 +75,5 @@ az bot update --resource-group $Bot.resource_group --name $Bot.name --endpoint "
 $success = $success -and $?
 
 # Return execution status
+Write-ExecutionStatus -success $success
 exit $success

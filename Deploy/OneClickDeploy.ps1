@@ -18,10 +18,10 @@ param(
     [ValidatePattern("^\w+$")]
     [string] $BOT_NAME,
 
-    [Parameter(HelpMessage="Regions to deploy the Bot to")]
+    [Parameter(HelpMessage="Regions to deploy the Bot to - Default: koreacentral, southeastasia")]
     [string[]] $BOT_REGIONS = @("koreacentral", "southeastasia"),
 
-    [Parameter(HelpMessage="Region used for global services")]
+    [Parameter(HelpMessage="Region used for global services - Default: japaneast")]
     [string] $BOT_GLOBAL_REGION = "japaneast",
 
     # Only needed in Issuing Mode (CreateSSL.ps1)
@@ -33,6 +33,10 @@ param(
     [Parameter(HelpMessage="The domain (CN) name for the SSL certificate")]
     [string] $YOUR_DOMAIN,
 
+    # Only needed in Issuing Mode (CreateSSL.ps1)
+    [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
+    [string] $LETS_ENCRYPT_STAGING = $False,
+
     # Only needed in Import Mode (ImportSSL.ps1)
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
@@ -41,59 +45,62 @@ param(
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
-    [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
+    [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval - Default: `$False")]
     [bool] $AUTOAPPROVE = $False,
 
-    [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
+    [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure - Default: `$False")]
     [bool] $RERUN = $False
 )
 # Helper var
 $success = $True
-
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # Validate Input parameter combination
-$validationresult = .\ValidateParameter.ps1 -BOT_NAME $BOT_NAME -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN
+$validationresult = & "$(Get-ScriptPath)\ValidateParameter.ps1" -BOT_NAME $BOT_NAME -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN
 
 if ($validationresult)
 {
     # Execute first Terraform to create the infrastructure
-    .\DeployInfrastructure -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
+    & "$(Get-ScriptPath)\DeployInfrastructure.ps1" -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
     $success = $success -and $LASTEXITCODE
 
     # Execute LUIS Train & Deploy
     if ($success)
     {
-        .\DeployLUIS.ps1
+        & "$(Get-ScriptPath)\DeployLUIS.ps1"
         $success = $success -and $LASTEXITCODE
     }
     
     # Deploy the Bot
     if ($success)
     {
-        .\DeployBot.ps1
+        & "$(Get-ScriptPath)\DeployBot.ps1"
         $success = $success -and $LASTEXITCODE
     }
 
     # Import or issue a SSL certificate and activate it in WebApps and connect WebApps to TrafficManager
     if ($success)
     {
-        .\CreateOrImportSSL.ps1 -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN -ALREADYCONFIRMED $True
+        & "$(Get-ScriptPath)\CreateOrImportSSL.ps1" -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -LETS_ENCRYPT_STAGING $LETS_ENCRYPT_STAGING -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN -ALREADYCONFIRMED $True
         $success = $success -and $LASTEXITCODE
     }
 
     # Display the WebChat link (local & online version)
     if ($success)
     {
-        .\RetrieveWebChatLink.ps1
+        & "$(Get-ScriptPath)\RetrieveWebChatLink.ps1"
         $success = $success -and $LASTEXITCODE
-    }
-
-    # Check execution process
-    if ($success -eq $False)
-    {
-        Write-Host -ForegroundColor Red "`n`n# ERROR Occured while execution. Please check your output for errors and rerun the script or scriptlets.`n# In case of this script ($($MyInvocation.MyCommand.Name)) include the -RERUN `$True flag."
     }
 }
 
+# Check write execution process
+if ($success -eq $False -or $validationresult -eq $False)
+{
+    # Additional Helper message
+    Write-Host -ForegroundColor Red "`n`n# ERROR Occured while execution. Please check your output for errors and rerun the script or scriptlets.`n# Include the '-RERUN `$True' flag in case the execution of script 'DeployInfrastructure.ps1' was already successful."
+} else {
+    Write-ExecutionStatus -success $success
+}

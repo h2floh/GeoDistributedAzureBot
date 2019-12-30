@@ -55,9 +55,14 @@ Please report any problems you face under issues!
 
 ### Prerequisites for all tasks
 
-- PowerShell Core >6.2.3
-- Terraform >0.12.17
-- Azure CLI >2.0.71
+> :information_source: Scripts are tested with PowerShell Core under Windows 10, Ubuntu 18.04.3 LTS ~~and [Azure Shell](https://shell.azure.com/)~~
+
+- [PowerShell Core](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-6) >=6.2.3
+- [Terraform](https://learn.hashicorp.com/terraform/azure/install_az) >=0.12.18
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) >=2.0.71
+- [.NET Core SDK](https://dotnet.microsoft.com/download/dotnet-core) >=2.2
+- [Node.js & npm](https://nodejs.org/en/download/) >= 8.5
+- [LUIS CLI](https://github.com/Microsoft/botbuilder-tools/tree/master/packages/LUIS) >=2.6.2 
 - Be logged into Azure CLI and having Subscription Level Owner or Contributor rights on the "isDefault" marked subscription
 
 ### Summary of steps
@@ -87,19 +92,19 @@ You can use the OneClickDeploy.ps1 script, several options are available. (TODO 
 ```bash
 # Example 1: Issues a SSL certificate from Let's Encrypt for the TrafficManager Endpoint Domain
 # [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -AUTOAPPROVE $True
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -AUTOAPPROVE $True
 
 # Example 2: Issues a SSL certificate from Let's Encrypt for your custom domain
 # [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 
 # Example 3: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True
 
 # Example 4: Imports an existing SSL certificate (PFX File) for your custom domain
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> `
  -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 ```
@@ -121,7 +126,7 @@ With the execution of the below script you can save your SSL certificate and the
 
 ```bash
 # Example 1: Exports the SSL certificate as PFX File and destroys the infrastructure
-.\OneClickDestroy.ps1 -BOT_NAME <yourbotname>
+.\Deploy\OneClickDestroy.ps1 -BOT_NAME <yourbotname>
 ```
 
 ### 4. Deploy it again
@@ -130,11 +135,11 @@ If you used the integrated Let's Encrypt certificate issuing please the saved ce
 
 ```bash
 # Example 1: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True
 
 # Example 2: Imports an existing SSL certificate (PFX File) for your custom domain
-.\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> `
  -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 ```
@@ -148,12 +153,14 @@ There is no __one fits it all__ Infrastructure as Code tool
 - For waiting I used script loops together with Azure CLI commands
 - Terraform AzureRM provider still lacks some update features. E.g. there is a need to update only the Bot's endpoint in a subsequent Terraform execution, but this is not possible because there is no data source for Bot, so we would have to keep track of all parameters. In such cases we used Azure CLI for updating.
 - Terraform is very convenient if you want to destroy the environment again (demos, non frequent reoccurring tasks)
+- For real cross platform usage of PowerShell Core scripts you have to stick to unix file name/path conventions
 
 ## Open points and next steps
 
 Listing up various things from different domain/view angles:
 
 - Include prerequisite validation check
+- Change from LUIS CLI to API calls in order to overcome Azure Shell restriction on npm executable packages
 - Create additional documentation for all scripts and their options / deployment flow
 - Update scripts and Terraform to use remote state store based on Blob Storage
 - Extend Bot with Geo distributed Speech service

@@ -13,7 +13,7 @@
 # Parameters
 param(
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
-    [string] $PFX_FILE_LOCATION = "../SSL/sslcert.pfx",
+    [string] $PFX_FILE_LOCATION,
     
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
@@ -21,12 +21,19 @@ param(
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Helper var
+$iaCFolder = "IaC"
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
+
+# Set Default Values for Parameters
+$PFX_FILE_LOCATION = Set-DefaultIfEmpty -VALUE $PFX_FILE_LOCATION -DEFAULT "$(Get-ScriptPath)/../SSL/sslcert.pfx"
 
 # Load Values from Terraform Infrastructure run
 Write-Host "## 1. Load KeyVault values from Terraform Infrastructure run"
-$keyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
+$keyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
 
 # While possible to do this also with Terraform it is one simple command with AzureCLI
 Write-Host "## 2. Import PFX/SSL to KeyVault"
@@ -37,7 +44,7 @@ if ($PFX_FILE_PASSWORD -ne "") {
 }
 
 if($? -eq $False) {
-    Write-Host "### Error while importing PFX file, please check first if password is correct and file not corrupt..."
+    Write-Host -ForegroundColor -Red "### Error while importing PFX file, please check first if password is correct and file not corrupt..."
     exit $False
 }
 

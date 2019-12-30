@@ -31,6 +31,8 @@ param(
     [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
     [bool] $RERUN = $False
 )
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 
 # Check Bot Name, if provided
 if ($BOT_NAME -ne "")
@@ -44,11 +46,11 @@ if ($BOT_NAME -ne "")
         # Check service name availability
         $dnscheck = $True
         # CosmosDB
-        $dnscheck = (.\CheckServiceAvailability.ps1 -Service "CosmosDB" -FQDN "$BOT_NAME.documents.azure.com") -and $dnscheck 
+        $dnscheck = (Check-ServiceAvailability -Service "CosmosDB" -FQDN "$BOT_NAME.documents.azure.com") -and $dnscheck 
         # Traffic Manager
-        $dnscheck = (.\CheckServiceAvailability.ps1 -Service "TrafficManager" -FQDN "$BOT_NAME.trafficmanager.net") -and $dnscheck
+        $dnscheck = (Check-ServiceAvailability -Service "TrafficManager" -FQDN "$BOT_NAME.trafficmanager.net") -and $dnscheck
         # KeyVault
-        $dnscheck = (.\CheckServiceAvailability.ps1 -Service "KeyVault" -FQDN "$BOT_NAME.vault.azure.net") -and $dnscheck
+        $dnscheck = (Check-ServiceAvailability -Service "KeyVault" -FQDN "$BOT_NAME.vault.azure.net") -and $dnscheck
         # Skipping checks for WebApp for now
 
         if (-not $dnscheck)
@@ -59,9 +61,30 @@ if ($BOT_NAME -ne "")
 } 
 else {
     # Check most likly executed after creation of Infrastructure, load TrafficManager values from Terraform run
-    $TrafficManager = terraform output -state=".\IaC\terraform.tfstate" -json trafficManager | ConvertFrom-Json
+    $TrafficManager = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json trafficManager | ConvertFrom-Json
 }
 
+# Check Azure Login
+$azureAccount = az account show | ConvertFrom-Json
+if ($? -eq $False)
+{
+    Write-Host -ForegroundColor Red "### ERROR, az not logged in. Please log into Azure CLI first. Command 'az login'"
+    return $False
+}
+if ($AUTOAPPROVE -eq $False -and $ALREADYCONFIRMED -eq $False)
+{
+    # Request for approval
+    $confirm = Read-Host "### Are you sure you want to deploy to Azure Subscription '$($azureAccount.name)' (ID:$($azureAccount.id))? [y/n]"
+
+    if ($confirm -ne "y")
+    {
+        return $False
+    }
+} 
+elseif ($ALREADYCONFIRMED -eq $False) {
+    # Informational note
+    Write-Host -ForegroundColor Yellow "### Deploying to Azure Subscription '$($azureAccount.name)' (ID:$($azureAccount.id))"
+}
 
 if ($PFX_FILE_LOCATION -ne "")
 {
@@ -101,7 +124,7 @@ if ($PFX_FILE_LOCATION -ne "")
             # SSL creation/issuing reassure
             if ($AUTOAPPROVE -eq $False -and $ALREADYCONFIRMED -eq $False)
             {
-                $confirm = Read-Host "Are you sure you want to issue a new SSL certificate for domain '$YOUR_DOMAIN'? [y/n]"
+                $confirm = Read-Host "### Are you sure you want to issue a new SSL certificate for domain '$YOUR_DOMAIN'? [y/n]"
             } else {
                 $confirm = "y"
             }

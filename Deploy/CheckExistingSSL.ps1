@@ -15,12 +15,14 @@ param(
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
+$KeyVault = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json keyVault | ConvertFrom-Json
 
 # 2. Check if certificate exists in Key Vault
 Write-Host "## 2. Check if certificate exists in Key Vault"

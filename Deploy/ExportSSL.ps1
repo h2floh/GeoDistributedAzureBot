@@ -13,20 +13,25 @@
 # Parameters
 param(
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
-    [string] $PFX_FILE_LOCATION = "../SSL/sslcert.pfx",
+    [string] $PFX_FILE_LOCATION,
 
     [Parameter(HelpMessage="KeyVault certificate name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
 # Helper var
 $success = $True
-
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$KeyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
+$KeyVault = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$success = $success -and $?
+
+# Set Default Values for Parameters
+$PFX_FILE_LOCATION = Set-DefaultIfEmpty -VALUE $PFX_FILE_LOCATION -DEFAULT "$(Get-ScriptPath)/../SSL/$($KeyVault.name).pfx"
 
 # 2. Export SSL Certificate
 Write-Host "## 2. Export SSL Certificate from KeyVault"
@@ -40,18 +45,27 @@ $kvSecretBytes = [System.Convert]::FromBase64String($kvSecret.value)
 $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
 $certCollection.Import($kvSecretBytes, $null ,[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
 
-# Change to Read-Host
-$password = Read-Host "### Please enter a password for the PFX file" -AsSecureString
-
-# Create Byte Object
-$protectedCertificateBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::
-SecureStringToBSTR($password)))
+if ($PSVersionTable.Platform -eq "Win32NT")
+{
+    # Change to Read-Host
+    $password = Read-Host "### Please enter a password for the PFX file" -AsSecureString
+    # Create Byte Object
+    $protectedCertificateBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+} else {
+    # Change to Read-Host
+    $password = Read-Host "### Please enter a password for the PFX file"
+    # Create Byte Object
+    $protectedCertificateBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, $password)
+}
 
 # Save to file
 Set-Content -Path $PFX_FILE_LOCATION -AsByteStream -Value $protectedCertificateBytes
 $success = $success -and $?
 
-Write-Host "### Certificate successfully exported to $PFX_FILE_LOCATION`n(please store and keep it somewhere for reuse)"
+# Report
+$pfxfile = Get-ItemProperty -Path $PFX_FILE_LOCATION
+Write-Host "### Certificate successfully exported to $($pfxfile.FullName)`n(please store and keep it somewhere for reuse)"
 
 # Return execution status
+Write-ExecutionStatus -success $success
 exit $success

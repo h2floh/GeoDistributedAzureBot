@@ -23,20 +23,24 @@ param(
     [string] $LUIS_APP_NAME = "AddressFinder",
 
     [Parameter(HelpMessage="LUIS Application Package file location (JSON)")]
-    [string] $LUIS_APP_PACKAGE_LOCATION = "../GeoBot/GeoBot/CognitiveModels/AddressFinder.json",
+    [string] $LUIS_APP_PACKAGE_LOCATION,
 
     [Parameter(HelpMessage="LUIS Authoring Key KeyVault secret name")]
     [string] $LUIS_KEYVAULT_KEY = "LUISAuthoringKey"
 )
 # Helper var
 $success = $True
+# Import Helper functions
+. "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
+# Tell who you are (See HelperFunction.ps1)
+Write-WhoIAm
 
-# Tell who you are
-Write-Host "`n`n# Executing $($MyInvocation.MyCommand.Name)"
+# Set Default Values for Parameters
+$LUIS_APP_PACKAGE_LOCATION = Set-DefaultIfEmpty -VALUE $LUIS_APP_PACKAGE_LOCATION -DEFAULT "$(Get-ScriptPath)/../GeoBot/GeoBot/CognitiveModels/AddressFinder.json"
 
 # 1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)
 Write-Host "## 1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)"
-$keyVault = terraform output -state=".\IaC\terraform.tfstate" -json keyVault | ConvertFrom-Json
+$keyVault = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json keyVault | ConvertFrom-Json
 $LUISauthKey=$(az keyvault secret show --vault-name $keyVault.name --name $LUIS_KEYVAULT_KEY --query 'value' -o tsv)
 $success = $success -and $?
 
@@ -77,7 +81,8 @@ $success = $success -and $?
 
 # 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)
 Write-Host "## 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)"
-$LUISAccounts = terraform output -state=".\IaC\terraform.tfstate" -json luisAccounts | ConvertFrom-Json
+$LUISAccounts = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json luisAccounts | ConvertFrom-Json
+$success = $success -and $?
 
 # 8. Loops to associate every LUIS account with the LUIS application (cURL command)
 Write-Host "## 8. Loops to associate every LUIS account with the LUIS application (cURL command)"
@@ -101,4 +106,5 @@ $LUISAccounts | ForEach {
 }
 
 # Return execution status
+Write-ExecutionStatus -success $success
 exit $success
