@@ -1,18 +1,30 @@
-###
-#
-# Check if already a SSL certificate was imported to KeyVault
-#
-# This script will do following steps:
-#
-# 1. Read values from Terraform IaC run (Bot deployment scripts)
-# 2. Check if certificate exists in Key Vault
-#
-# Returns $True if certificate already exists
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Check if already a SSL certificate was imported to KeyVault
+
+.DESCRIPTION
+Check if already a SSL certificate was imported to KeyVault
+
+This script will do following steps:
+
+1. Read values from Terraform IaC run (Bot deployment scripts)
+2. Check if certificate exists in Key Vault
+
+Returns $True if certificate already exists
+
+.EXAMPLE
+.\CheckExistingSSL.ps1 -KEYVAULT_CERT_NAME SSLcert
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if certificate already exists
+
+#>
 param(
-    [Parameter(HelpMessage="KeyVault certificate name")]
+    #KeyVault certificate key name
+    [Parameter(HelpMessage="KeyVault certificate key name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
 # Import Helper functions

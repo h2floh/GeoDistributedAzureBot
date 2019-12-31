@@ -1,28 +1,50 @@
-###
-# This script will do following steps:
-#
-# 1. Publish the .NET Core 2.2 Bot for x64 Windows (see App Service Plan)
-# 2. Compress publish folder to zip file
-# 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)
-# 4. Deploy to WebApps
-#
-# After the script is successfully executed the bot code is deployed
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Deploys the provided Bot project to all Azure Web App regions
+
+.DESCRIPTION
+Deploys the provided Bot project to all Azure Web App regions
+
+This script will do following steps:
+
+1. Publish the .NET Core 2.2 Bot for x64 Windows (see App Service Plan)
+2. Compress publish folder to zip file
+3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)
+4. Deploy to WebApps
+
+After the script is successfully executed the bot code is deployed
+
+.EXAMPLE
+.\DeployBot.ps1
+
+.EXAMPLE
+.\DeployBot.ps1 -CONFIGURATION debug
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
+    # Bot Project File - Default: GeoBot/GeoBot/GeoBot.csproj
     [Parameter(HelpMessage="Bot Project File")]
     [string] $BOT_PROJECT_FILE,
 
+    # Target Runtime see https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
     [Parameter(HelpMessage="Target Runtime see https://docs.microsoft.com/en-us/dotnet/core/rid-catalog")] 
     [string] $TARGET_RUNTIME = "win-x64",
 
+    # Configuration release or debug
     [Parameter(HelpMessage="Configuration release or debug")]
     [string] $CONFIGURATION = "release",
 
+    # Folder to dotnet publish artifacts - Default: GeoBot/GeoBot/bin/release/netcoreapp2.2/win-x64/publish/*
     [Parameter(HelpMessage="Folder to dotnet publish artifacts")]
     [string] $PUBLISH_ARTIFACTS,
 
+    # Deployment Zip File Name
     [Parameter(HelpMessage="Deployment Zip File Name")]
     [string] $ZIP_FILE_NAME = "botnotselfcontained.zip"
 )

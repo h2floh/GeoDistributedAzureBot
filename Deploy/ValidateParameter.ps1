@@ -1,33 +1,65 @@
-###
-#
-# Check for correct choice of Parameters
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Check for correct choice of Parameters and if Bot name is available
+
+.DESCRIPTION
+Check for correct choice of Parameters and if Bot name is available
+
+This script will do following steps:
+
+1. If Bot name provided check if Azure Services (KeyVault, CosmosDB, TrafficManager) are available under this name
+2. Check if logged into Azure CLI
+3. Check various combinations of possible parameters concerning the SSL certificate
+-- if PFX_FILE_LOCATION is supplied file has to exist
+-- -- if YOUR_DOMAIN is empty use _botname_.trafficmanager.net as Bot endpoint
+-- -- if YOUR_DOMAIN is provided use this custom domain name as Bot endpoint
+-- -- PFX_FILE_PASSWORD can be an empty password and therefore is always optional
+-- if YOUR_CERTIFICATE_EMAIL is supplied
+-- -- if YOUR_DOMAIN is empty issue SSL for _botname_.trafficmanager.net and use as Bot endpoint
+-- -- if YOUR_DOMAIN is provided issue SSL for this domain name and use as Bot endpoint
+
+After the script is successfully executed it should be ensured that the deployment should be succesful
+
+.EXAMPLE
+.\ValidateParameter.ps1 -BOT_NAME myuniquebot -YOUR_CERTIFICATE_EMAIL me@mymail.com -YOUR_DOMAIN bot.mydomain.com 
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if the check was successful
+
+#>
 param(
-    [Parameter(HelpMessage="Unique Bot Name -> will be used as DNS prefix for a lot of services so it has to be very unique")]
+    # Unique Bot Name -> will be used as DNS prefix for CosmosDB, TrafficManager and KeyVault
+    [Parameter(HelpMessage="Unique Bot Name -> will be used as DNS prefix for CosmosDB, TrafficManager and KeyVault")]
     [string] $BOT_NAME,
 
-    # Only needed in Issuing Mode
+    # Mail to be associated with Let's Encrypt certificate
     [Parameter(HelpMessage="Mail to be associated with Let's Encrypt certificate")]
     [string] $YOUR_CERTIFICATE_EMAIL,
 
-    # Only needed in Issuing Mode
+    # The domain (CN) name for the SSL certificate
     [Parameter(HelpMessage="The domain (CN) name for the SSL certificate")]
     [string] $YOUR_DOMAIN,
 
+    # SSL CERT (PFX Format) file location
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
     
+    # SSL CERT (PFX Format) file password
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
+    # Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval
     [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
     [bool] $AUTOAPPROVE = $False,
 
+    # Flag to determine if run from within OneClickDeploy.ps1
     [Parameter(HelpMessage="Flag to determine if run from within OneClickDeploy.ps1")]
     [bool] $ALREADYCONFIRMED = $False,
 
+    # To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure
     [Parameter(HelpMessage="To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure")]
     [bool] $RERUN = $False
 )
