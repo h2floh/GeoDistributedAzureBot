@@ -1,21 +1,34 @@
-###
-#
-# Export SSL from 
-#
-# This script will do following steps:
-#
-# 1. Read KeyVault information from current Terraform state
-# 2. Export Certificate to file 
-#
-# After the script is successfully executed the SSL certificate should be exported
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Export SSL Certificate as PFX from KeyVault
+
+.DESCRIPTION
+Export SSL Certificate as PFX from KeyVault
+
+This script will do following steps:
+
+1. Read KeyVault information from current Terraform state
+2. Export Certificate to file 
+
+After the script is successfully executed the SSL certificate should be saved as PFX file
+
+.EXAMPLE
+.\ExportSSL.ps1
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
+    # SSL CERT (PFX Format) file location - Default: SSL/<BOT_NAME>.pfx
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
 
-    [Parameter(HelpMessage="KeyVault certificate name")]
+    # KeyVault certificate key name
+    [Parameter(HelpMessage="KeyVault certificate key name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
 # Helper var

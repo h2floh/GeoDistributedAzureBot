@@ -74,7 +74,7 @@ Please report any problems you face under issues!
 
 ### 1. Deploying the Infrastructure & Sample Bot
 
-You can use the OneClickDeploy.ps1 script, several options are available. (TODO explaining md file)
+You can use the [OneClickDeploy.ps1](Doc/OneClickDeploy.md) script, several options are available.
 
 > :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name (with the current solution you can also issue a Let's Encrypt certificate for you custom domain - TODO explaining md file) and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
 
@@ -89,7 +89,7 @@ You can use the OneClickDeploy.ps1 script, several options are available. (TODO 
 
 > :information_source: To use a custom domain name you have just to set a CNAME entry in your DNS server pointing to the TrafficManager domain name (default `<botname>.trafficmanager.net`). See [here](https://docs.microsoft.com/en-us/azure/dns/dns-operations-recordsets-portal) on how to do it if you use Azure DNS.
 
-```bash
+```powershell
 # Example 1: Issues a SSL certificate from Let's Encrypt for the TrafficManager Endpoint Domain
 # [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -AUTOAPPROVE $True
@@ -124,7 +124,7 @@ Last but not least break something (removing LUIS Endpoint Key in luis.ai, Stop 
 
 With the execution of the below script you can save your SSL certificate and then delete all generated infrastructure:
 
-```bash
+```powershell
 # Example 1: Exports the SSL certificate as PFX File and destroys the infrastructure
 .\Deploy\OneClickDestroy.ps1 -BOT_NAME <yourbotname>
 ```
@@ -133,7 +133,7 @@ With the execution of the below script you can save your SSL certificate and the
 
 If you used the integrated Let's Encrypt certificate issuing please the saved certificate (it is valid for 3 months) for redeployments (if either you use the same Bot Name or Custom Domain for redeploy).
 
-```bash
+```powershell
 # Example 1: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True

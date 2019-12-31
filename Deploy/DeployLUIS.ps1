@@ -1,30 +1,44 @@
-###
-#
-# Deploy LUIS NLP application
-# Remark: There is no support in the Terraform AzureRM provider to do this.
-#
-# This script will do following steps:
-#
-# 1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)
-# 2. Imports the application to LUIS.ai via LUIS JSON model and LUIS cli tool
-# 3. Trains the application on LUIS.ai via LUIS cli tool
-# 4. Publishes the application to production slot on LUIS.ai via LUIS cli tool
-# 5. Sets the LUIS Application Id in KeyVault for distribution to Bot WebApp nodes (Azure CLI)
-# 6. Prepares and imports data necessary for LUIS Endpoint & Key association REST API (using Azure CLI - due to feature lag in LUIS CLI) 
-# 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)
-# 8. Loops to associate every LUIS account with the LUIS application (cURL command)
-#
-# After successful execution the LUIS app is available trough all regionalized LUIS Cognitive Service endpoints from all created Bots/WebApps
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Deploy LUIS NLP application
+
+.DESCRIPTION
+Deploy LUIS NLP application
+Remark: There is no support in the Terraform AzureRM provider to do this.
+
+This script will do following steps:
+
+1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)
+2. Imports the application to LUIS.ai via LUIS JSON model and LUIS cli tool
+3. Trains the application on LUIS.ai via LUIS cli tool
+4. Publishes the application to production slot on LUIS.ai via LUIS cli tool
+5. Sets the LUIS Application Id in KeyVault for distribution to Bot WebApp nodes (Azure CLI)
+6. Prepares and imports data necessary for LUIS Endpoint & Key association REST API (using Azure CLI - due to feature lag in LUIS CLI) 
+7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)
+8. Loops to associate every LUIS account with the LUIS application (cURL command)
+
+After successful execution the LUIS app is available trough all regionalized LUIS Cognitive Service endpoints from all created Bots/WebApps
+
+.EXAMPLE
+.\DeployLUIS.ps1
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
+    # LUIS Application Name
     [Parameter(HelpMessage="LUIS Application Name")]
     [string] $LUIS_APP_NAME = "AddressFinder",
 
+    # LUIS Application Package file location (JSON) - Default: GeoBot/GeoBot/CognitiveModels/AddressFinder.json
     [Parameter(HelpMessage="LUIS Application Package file location (JSON)")]
     [string] $LUIS_APP_PACKAGE_LOCATION,
 
+    # LUIS Authoring Key KeyVault secret name
     [Parameter(HelpMessage="LUIS Authoring Key KeyVault secret name")]
     [string] $LUIS_KEYVAULT_KEY = "LUISAuthoringKey"
 )
@@ -94,14 +108,18 @@ $LUISAccounts | ForEach {
     $body="{""azureSubscriptionId"":""$subscriptionId"",""resourceGroup"":""$rg"",""accountName"":""$account""}"
     Set-Content -Path body.json -Value $body
 
-    $CurlArgument = '-v', '-X', 'POST', "https://westus.api.cognitive.microsoft.com/luis/api/v2.0/apps/$($LUISAppInfo.id)/azureaccounts" `
+    $CurlArgument = '-X', 'POST', "https://westus.api.cognitive.microsoft.com/luis/api/v2.0/apps/$($LUISAppInfo.id)/azureaccounts" `
     , '-H', "Authorization: Bearer $AccessToken" `
     , '-H', "Content-Type: application/json" `
     , '-H', "Ocp-Apim-Subscription-Key: $LUISauthKey" `
     , '-d', '@body.json'
-    curl @CurlArgument
+    $httpresult = curl @CurlArgument
     $success = $success -and $?
-    
+    # check HTTP result
+    $httpresult = $httpresult | ConvertFrom-Json
+    $httpresult
+    $success = $success -and ($httpresult.code -eq "Success")
+
     Remove-Item -Path body.json
 }
 

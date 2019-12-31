@@ -1,14 +1,25 @@
-###
-#
-# Deactivate SSL Certificate when in direct use with TrafficManager Domain
-#
-# This script will do following steps:
-#
-# 1. Read relevant data of TrafficManager from Terraform Infrastructure execution
-# 2. Delete all TrafficManager endpoints, this will also remove the custom domain name entry from WebApps automatically
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Deactivate SSL Certificate when in direct use with TrafficManager Domain
+
+.DESCRIPTION
+Deactivate SSL Certificate when in direct use with TrafficManager Domain
+
+This script will do following steps:
+
+1. Read relevant data of TrafficManager from Terraform Infrastructure execution
+2. Delete all TrafficManager endpoints, this will also remove the custom domain name entry from WebApps automatically
+
+.EXAMPLE
+.\DeactivateSSL.ps1
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
 
 )

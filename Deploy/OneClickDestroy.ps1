@@ -1,33 +1,53 @@
-###
-#
-# One Click Destroy for Geo Distributed Bot Solution
-#
-# This script will do following steps:
-#
-# 1. Export Certificate to file [only if not in AUTOAPPROVE mode]
-# 2. Destroy rest of environment with Terraform
-#
-# After the script is successfully executed there should be nothing left
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+One Click Destroy for Geo Distributed Bot Solution
+
+.DESCRIPTION
+One Click Destroy for Geo Distributed Bot Solution
+
+This script will do following steps:
+
+1. Export Certificate to file [only if not in AUTOAPPROVE mode]
+2. Destroy rest of environment with Terraform
+
+After the script is successfully executed there should be nothing left
+
+.EXAMPLE
+.\OneClickDestroy.ps1 -BOT_NAME myuniquebot
+
+.EXAMPLE
+.\OneClickDestroy.ps1 -BOT_NAME myuniquebot -AUTOAPPROVE $True
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
+    # Unique Bot Name
     [Parameter(Mandatory=$true, HelpMessage="Unique Bot Name")]
     [ValidatePattern("^\w+$")]
     [string] $BOT_NAME,
 
+    # Regions the Bot was deployed to
     [Parameter(HelpMessage="Regions the Bot was deployed to")]
     [string[]] $BOT_REGIONS = @("koreacentral", "southeastasia"),
 
+    # Region used for global services
     [Parameter(HelpMessage="Region used for global services")]
     [string] $BOT_GLOBAL_REGION = "japaneast",
 
+    # SSL CERT (PFX Format) file location
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
 
-    [Parameter(HelpMessage="KeyVault certificate name")]
+    # KeyVault certificate key name
+    [Parameter(HelpMessage="KeyVault certificate key name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert",
 
+    # Terraform Automation Flag. $False -> Interactive and option to export SSL certificate, Approval $True -> Automatic Approval no export of SSL certificate
     [Parameter(HelpMessage="Terraform Automation Flag. `$False -> Interactive and option to export SSL certificate, Approval `$True -> Automatic Approval no export of SSL certificate")]
     [bool] $AUTOAPPROVE = $False
 )

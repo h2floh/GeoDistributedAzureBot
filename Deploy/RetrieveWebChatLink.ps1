@@ -1,16 +1,27 @@
-###
-#
-# Retrieve Test Web Chat Link for Geo Distributed Bot Solution
-#
-# This script will do following steps:
-#
-# 1. Retrieve Bot Data from Terraform infrastructure execution
-# 2. Retrieve DirectLine Secret and generate Link
-#
-# After the script is successfully executed you should have a link to check you bot
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Retrieve Test Web Chat Link for Geo Distributed Bot Solution
+
+.DESCRIPTION
+Retrieve Test Web Chat Link for Geo Distributed Bot Solution
+
+This script will do following steps:
+
+1. Retrieve Bot Data from Terraform infrastructure execution
+2. Retrieve DirectLine Secret and generate Link
+
+After the script is successfully executed you should have a link to check you bot
+
+.EXAMPLE
+.\RetrieveWebChatLink.ps1
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
 
 )

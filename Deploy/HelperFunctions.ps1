@@ -1,13 +1,19 @@
 # To avoid to complex setup of scripts we do not use PowerShell Modules on purpose
 
-# Simple function to print current scripts name
 function Write-WhoIAm {
+    <#
+    .SYNOPSIS
+    Simple function to print current scripts name
+    #>
     $CallerScriptName = $MyInvocation.ScriptName.split('/').split('\')[-1] 
     Write-Host "`n`n# Executing $($CallerScriptName)"
 }
 
-# Simple function to print success or failure of current script
 function Write-ExecutionStatus {
+    <#
+    .SYNOPSIS
+    Simple function to print success or failure of current script
+    #>
     param([bool] $success)
 
     $CallerScriptName = $MyInvocation.ScriptName.split('/').split('\')[-1] 
@@ -20,8 +26,11 @@ function Write-ExecutionStatus {
     }
 }
 
-# Simple function to return Terraform Auto Approve flag
 function Get-TerraformAutoApproveFlag {
+    <#
+    .SYNOPSIS
+    Simple function to return Terraform Auto Approve flag
+    #>
     param([bool] $AUTOAPPROVE)
 
     if ($AUTOAPPROVE -eq $True)
@@ -32,24 +41,28 @@ function Get-TerraformAutoApproveFlag {
     }
 }
 
-# Simple function to return caller script absolute path
 function Get-ScriptPath {
+    <#
+    .SYNOPSIS
+    Simple function to return caller script absolute path
+    #>
     return $MyInvocation.PSScriptRoot
 }
 
-###
-#
-# Check for availability of DNS
-# returns $False if service is already
-#
-###
 function Check-ServiceAvailability {
-    # Parameters
+    <#
+    .SYNOPSIS
+    Check for availability of DNS
+
+    .OUTPUTS
+    System.Boolean. returns $False if service is already
+    #>
     param(
+        # Service Name
         [Parameter(HelpMessage="Service Name")]
         [string] $Service,
 
-        # Only needed in Issuing Mode
+        # Full Qualified Domain Name to check
         [Parameter(HelpMessage="Full Qualified Domain Name to check")]
         [string] $FQDN
     )
@@ -65,17 +78,16 @@ function Check-ServiceAvailability {
     }
 }
 
-###
-#
-# Create Region Variable File for Terraform
-#
-# This script will do following steps:
-#
-# 1.  Create content for variable file
-#
-###
 function Set-RegionalVariableFile {
-    # Parameters
+    <#
+    .SYNOPSIS
+    Create Region Variable File for Terraform
+    This function will do following steps:
+    1.  Create content for variable file
+
+    .OUTPUTS
+    System.Boolean. returns if execution/creation was successful
+    #>
     param(
         [Parameter(Mandatory=$True, HelpMessage="Filename to use")]
         [string] $FILENAME,
@@ -102,13 +114,14 @@ function Set-RegionalVariableFile {
     return $success 
 }
 
-###
-#
-# Sets a default value if the string parameter is empty
-#
-###
 function Set-DefaultIfEmpty {
-    # Parameters
+    <#
+    .SYNOPSIS
+    Sets a default value if the string parameter is empty
+
+    .OUTPUTS
+    System.String
+    #>
     param(
         [Parameter(HelpMessage="Current Value of Parameter")]
         [string] $VALUE,
@@ -126,11 +139,16 @@ function Set-DefaultIfEmpty {
 
 }
 
-#
-# Terraform Windows behavior is strange on apply plan
-#
-# Simple function to return caller script absolute path
 function Get-ScriptPathTerraformApply {
+    <#
+    .SYNOPSIS
+    Simple function to return caller script absolute path 
+      Windows -> without drive letter (Windows Terraform bug)
+      Linux -> default
+
+    .OUTPUTS
+    System.String
+    #>
 
     if ($PSVersionTable.Platform -eq "Win32NT")
     {

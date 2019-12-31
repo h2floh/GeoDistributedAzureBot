@@ -1,24 +1,38 @@
-###
-#
-# Import existing SSL certificate to KeyVault
-#
-# This script will do following steps:
-#
-# 1. Load KeyVault values from Terraform Infrastructure run
-# 2. Import PFX/SSL to KeyVault
-#
-# After the script is successfully executed the Bot should be in a usable from within Bot Framework Service (WebChat) and Emulator
-#
-###
-# Parameters
+<#
+.SYNOPSIS
+Import existing SSL certificate to KeyVault
+
+.DESCRIPTION
+Import existing SSL certificate to KeyVault
+
+This script will do following steps:
+
+1. Load KeyVault values from Terraform Infrastructure run
+2. Import PFX/SSL to KeyVault
+
+After the script is successfully executed the Bot should be in a usable from within Bot Framework Service (WebChat) and Emulator
+
+.EXAMPLE
+.\ImportSSL.ps1 -PFX_FILE_LOCATION ../SSL/mybot.pfx -PFX_FILE_PASSWORD securesecret
+
+.INPUTS
+None. You cannot pipe objects.
+
+.OUTPUTS
+System.Boolean. Returns $True if executed successfully
+
+#>
 param(
+    # SSL CERT (PFX Format) file location - Default: SSL/<BOT_NAME>.pfx
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]
     [string] $PFX_FILE_LOCATION,
     
+    # SSL CERT (PFX Format) file password
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
-    [Parameter(HelpMessage="KeyVault certificate name")]
+    # KeyVault certificate key name
+    [Parameter(HelpMessage="KeyVault certificate key name")]
     [string] $KEYVAULT_CERT_NAME = "SSLcert"
 )
 # Helper var
@@ -28,12 +42,12 @@ $iaCFolder = "IaC"
 # Tell who you are (See HelperFunction.ps1)
 Write-WhoIAm
 
-# Set Default Values for Parameters
-$PFX_FILE_LOCATION = Set-DefaultIfEmpty -VALUE $PFX_FILE_LOCATION -DEFAULT "$(Get-ScriptPath)/../SSL/sslcert.pfx"
-
 # Load Values from Terraform Infrastructure run
 Write-Host "## 1. Load KeyVault values from Terraform Infrastructure run"
 $keyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+
+# Set Default Values for Parameters
+$PFX_FILE_LOCATION = Set-DefaultIfEmpty -VALUE $PFX_FILE_LOCATION -DEFAULT "$(Get-ScriptPath)/../SSL/$($KeyVault.name).pfx"
 
 # While possible to do this also with Terraform it is one simple command with AzureCLI
 Write-Host "## 2. Import PFX/SSL to KeyVault"
