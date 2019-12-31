@@ -35,7 +35,10 @@ param(
     [Parameter(HelpMessage="The domain (CN) name for the SSL certificate")]
     [string] $YOUR_DOMAIN,
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> PowerShell style doc - fixed nslookup in CreateSSL
     # $True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: $False
     [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
     [bool] $LETS_ENCRYPT_STAGING = $False,
@@ -99,7 +102,6 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
         Write-Host "### WARNING, there is no CNAME entry for domain '$YOUR_DOMAIN' pointing to '$($TrafficManager.fqdn)'."
         Write-Host "### Please check your DNS entry, or create the missing CNAME entry. Sleeping for $waitretrysec seconds and try again..."
         Start-Sleep -s $waitretrysec
-
         # Not working in PowerShellCore: $resolved = Resolve-DnsName -Name $YOUR_DOMAIN -DnsOnly 2> $null
         # Changing to nslookup
         $resolved = nslookup $YOUR_DOMAIN 2> $null
