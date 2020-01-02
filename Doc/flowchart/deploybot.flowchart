@@ -1,0 +1,9 @@
+st=>start: Start
+e=>end: End
+d1=>operation: Clean DOTNET project
+d2=>operation: Publish (build) DOTNET project
+d3=>operation: ZIP resources
+d4=>operation: Load WebApps data from IaC Terraform output
+d5=>operation: ZIP Deploy to each WebApp
+
+st->d1->d2->d3->d4->d5->e

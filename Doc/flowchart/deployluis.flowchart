@@ -1,0 +1,18 @@
+st=>start: Start
+e=>end: End
+l1=>operation: Load KeyVault data from IaC Terraform output
+l2=>operation: Load LUIS Authoring Key from KeyVault
+u=>operation: Update LUIS App
+i=>operation: Import LUIS App
+l3=>operation: Train LUIS App
+l4=>operation: Publish LUIS App
+l5=>operation: Set LUIS App ID config value in KeyVault
+l6=>operation: Load LUIS Endpoint Keys from from IaC Terraform output
+l7=>operation: Register all Endpoint Keys to LUIS App
+
+app=>condition: Does LUIS App already exists?
+
+st->l1->l2->app
+app(yes)->u->l3
+app(no)->i->l3
+l3->l4->l5->l6->l7->e

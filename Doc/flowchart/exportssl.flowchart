@@ -1,0 +1,16 @@
+st=>start: Start
+e=>end: End
+l1=>operation: Load KeyVault data from IaC Terraform output
+l2=>operation: Load SSL certificate data from KeyVault
+
+winp=>operation: Ask for PFX export password (SecureString)
+unixp=>operation: Ask for PFX export password (String)
+
+l3=>operation: Generate and Save PFX file
+
+os=>condition: Script runs on Windows?
+
+st->l1->l2->os
+os(yes)->winp->l3
+os(no)->unixp->l3
+l3->e

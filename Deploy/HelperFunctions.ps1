@@ -41,7 +41,6 @@ function Get-TerraformAutoApproveFlag {
     }
 }
 
-
 function Get-ScriptPath {
     <#
     .SYNOPSIS

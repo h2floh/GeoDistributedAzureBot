@@ -1,0 +1,30 @@
+st=>start: Start
+e=>end: End
+val=>operation: Validation:>ValidateParameter.md
+di=>operation: DeployInfrastructure:>DeployInfrastructure.md
+dl=>operation: DeployLUIS:>DeployLUIS.md
+db=>operation: DeployBot:>DeployBot.md
+cis=>operation: CreateOrImportSSL:>CreateOrImportSSL.md
+re=>operation: RetrieveWebChatLink:>RetrieveWebChatLink.md
+succ1=>condition: Success?
+succ2=>condition: Success?
+succ3=>condition: Success?
+succ4=>condition: Success?
+succ5=>condition: Success?
+
+st->val->succ1
+succ1(yes)->di
+succ1(no)->e
+di->succ2
+succ2(yes)->dl
+succ2(no)->e
+dl->succ3
+succ3(yes)->db
+succ3(no)->e
+db->succ4
+succ4(yes)->cis
+succ4(no)->e
+cis->succ5
+succ5(yes)->re
+succ5(no)->e
+re->e

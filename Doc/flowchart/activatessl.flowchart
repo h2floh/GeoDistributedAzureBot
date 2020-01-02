@@ -1,0 +1,7 @@
+st=>start: Start
+e=>end: End
+t1=>operation: Read IaC Terraform execution output
+t2=>operation: Apply SSLActivation Terraform
+b=>operation: Update Bot Registration Endpoint
+
+st->t1->t2->b->e

@@ -74,9 +74,9 @@ Please report any problems you face under issues!
 
 ### 1. Deploying the Infrastructure & Sample Bot
 
-You can use the [OneClickDeploy.ps1](Doc/OneClickDeploy.md) script, several options are available.
+You can use the [OneClickDeploy.ps1](Doc/Deploy/OneClickDeploy.md) script, several options are available.
 
-> :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name (with the current solution you can also issue a Let's Encrypt certificate for you custom domain - TODO explaining md file) and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
+> :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
 
 > :warning: Known issues/drawbacks:
 > - __the Bot Name parameter has to be unique__ since several Azure services will use it as prefix. Stick to lowercase no dashes and special chars and less than 20char. e.g. **myfirstname1234**
@@ -113,6 +113,8 @@ You can use the [OneClickDeploy.ps1](Doc/OneClickDeploy.md) script, several opti
 
 If the deployment script runs without any failures it will output generated links for accessing the WebChat locally or from within this repo's GitPage.
 
+[Here](/Doc/GeoBot/README.md) some hints on how to use the bot.
+
 > :information_source: Alternatively you can grab your Directline key from the [Bot Channel Registration pane](https://docs.microsoft.com/en-us/azure/bot-service/bot-service-channel-connect-directline?view=azure-bot-service-4.0). 
 Use the provided Test Webchat static [index.html](WebChat\index.html) and paste following query arguments
 `?bot=<BOT_NAME>&key=<DIRECT_LINE_KEY>`
@@ -122,7 +124,7 @@ Last but not least break something (removing LUIS Endpoint Key in luis.ai, Stop 
 
 ### 3. Destroying the Infrastructure (and saving your SSL certificate for reuse)
 
-With the execution of the below script you can save your SSL certificate and then delete all generated infrastructure:
+With the execution of the below [script](Doc/Deploy/OneClickDestroy.md) you can save your SSL certificate and then delete all generated infrastructure:
 
 ```powershell
 # Example 1: Exports the SSL certificate as PFX File and destroys the infrastructure

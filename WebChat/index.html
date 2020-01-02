@@ -1,31 +1,39 @@
 <html>
-<script>
-    var params = window.location.search.slice(1).split("&");
-    var botname = "";
-    var key = "";
 
-    for (var p = 0; p < params.length; p++) {
-        var nv = params[p].split("=");
-        var name = nv[0],
-            value = nv[1];
+<body>
+    <div id="webchat" role="main"></div>
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <script>
+        var params = window.location.search.slice(1).split("&");
+        var botname = "";
+        var key = "";
 
-        if (name == "bot") {
-            botname = value;
+        for (var p = 0; p < params.length; p++) {
+            var nv = params[p].split("=");
+            var name = nv[0],
+                value = nv[1];
+
+            if (name == "bot") {
+                botname = value;
+            }
+            if (name == "key") {
+                key = value;
+            }
         }
-        if (name == "key") {
-            key = value;
-        }
-    }
 
-    function loadSrcForIframe() {
-        var url = 'https://webchat.botframework.com/embed/' + botname + '?s=' + key;
-
-        document.getElementById('webchat').src = url;
-    }
-</script>
-
-<body onload="loadSrcForIframe()">
-    <iframe id="webchat" src="about:blank" style='min-width: 400px; width: 100%; min-height: 500px;'></iframe>
+        window.WebChat.renderWebChat({
+                directLine: window.WebChat.createDirectLine({
+                    token: key
+                }),
+                userID: 'geouser',
+                username: 'Geo User',
+                locale: 'en-US',
+                botAvatarInitials: 'GB',
+                userAvatarInitials: 'GU'
+            },
+            document.getElementById('webchat')
+        );
+    </script>
 </body>
 
 </html>
