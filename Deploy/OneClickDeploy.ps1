@@ -58,7 +58,7 @@ param(
 
     # $True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: $False
     [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
-    [string] $LETS_ENCRYPT_STAGING = $False,
+    [bool] $LETS_ENCRYPT_STAGING = $False,
 
     # SSL CERT (PFX Format) file location
     [Parameter(HelpMessage="SSL CERT (PFX Format) file location")]

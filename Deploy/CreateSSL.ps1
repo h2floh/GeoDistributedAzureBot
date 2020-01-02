@@ -38,7 +38,7 @@ param(
 
     # $True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: $False
     [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
-    [string] $LETS_ENCRYPT_STAGING = $False,
+    [bool] $LETS_ENCRYPT_STAGING = $False,
 
     # Terraform Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval
     [Parameter(HelpMessage="Terraform Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
@@ -59,11 +59,11 @@ $waitretrysec = 10
 $loopmax = (60 * $MAX_WAIT_TIME_MIN ) / $waitretrysec
 $terraformFolder = "SSLIssuing"
 $iaCFolder = "IaC"
+$PRODUCTION = 1
 if ($LETS_ENCRYPT_STAGING) {
     $PRODUCTION = 0
-} else {
-    $PRODUCTION = 1
-}
+} 
+
 # Import Helper functions
 . "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 # Tell who you are (See HelperFunction.ps1)
