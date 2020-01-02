@@ -35,10 +35,6 @@ param(
     [Parameter(HelpMessage="The domain (CN) name for the SSL certificate")]
     [string] $YOUR_DOMAIN,
 
-<<<<<<< HEAD
-
-=======
->>>>>>> PowerShell style doc - fixed nslookup in CreateSSL
     # $True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: $False
     [Parameter(HelpMessage="`$True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service) - Default: `$False")]
     [bool] $LETS_ENCRYPT_STAGING = $False,

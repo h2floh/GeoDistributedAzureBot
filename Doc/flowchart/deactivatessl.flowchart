@@ -1,0 +1,6 @@
+st=>start: Start
+e=>end: End
+t1=>operation: Read IaC Terraform execution output
+t2=>operation: Delete all TrafficManager endpoints
+
+st->t1->t2->e

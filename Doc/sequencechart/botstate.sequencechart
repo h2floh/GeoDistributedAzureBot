@@ -1,0 +1,12 @@
+User-->Bot: Connects
+Note right of Bot: Intent Echo State
+User->Bot: Says anything else then cancel
+Note right of Bot: Tries to understand intent
+Bot->User: Echo intent
+User->Bot: Says anything else then cancel
+Note right of Bot: Tries to understand intent
+Bot->User: Echo intent
+User->Bot: Says cancel
+Note right of Bot: Switches to Waiting State
+User->Bot: Says anything
+Note right of Bot: Switches to Intent Echo State

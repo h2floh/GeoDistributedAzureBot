@@ -1,0 +1,16 @@
+st=>start: Start
+e=>end: End
+t1=>operation: Read IaC Terraform execution output
+cname=>operation: Check if CNAME is set
+
+t2=>operation: Apply SSLIssuing Terraform
+kvcheck=>operation: Wait for certificate to be available
+t3=>operation: Destroy SSLIssuing Terraform
+
+cust=>condition: Custom Domain provided?
+
+st->t1->cust
+cust(yes)->cname
+cust(no)->t2
+cname->t2
+t2->kvcheck->t3->e

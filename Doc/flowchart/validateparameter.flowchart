@@ -1,0 +1,32 @@
+st=>start: Start
+e=>end: End
+botnameempty=>condition: Bot Name empty?
+botnamevalid=>condition: Bot Name valid?
+dns=>condition: DNS names available?
+load=>operation: Load TrafficManager DNS name
+
+autoapprove=>condition: Autoapprove On?
+acli=>condition: Azure CLI LoggedIn?
+
+pfxfile=>condition: PFX file provided?
+pfxfileexists=>condition: PFX file exists?
+
+email=>condition: Email parameter provided?
+
+st->botnameempty
+botnameempty(yes)->load
+load->acli
+botnameempty(no)->botnamevalid
+botnamevalid(no)->e
+botnamevalid(yes)->dns
+dns(no)->e
+dns(yes)->acli
+acli(yes)->pfxfile
+acli(no)->e
+
+pfxfile(no)->email
+pfxfile(yes)->pfxfileexists
+pfxfileexists(no)->e
+pfxfileexists(yes)->e
+email(yes)->e
+email(no)->e

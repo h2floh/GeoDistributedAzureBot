@@ -74,7 +74,7 @@ Please report any problems you face under issues!
 
 ### 1. Deploying the Infrastructure & Sample Bot
 
-You can use the [OneClickDeploy.ps1](Doc/OneClickDeploy.md) script, several options are available.
+You can use the [OneClickDeploy.ps1](Doc/Deploy/OneClickDeploy.md) script, several options are available.
 
 > :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name (with the current solution you can also issue a Let's Encrypt certificate for you custom domain - TODO explaining md file) and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
 
@@ -122,7 +122,7 @@ Last but not least break something (removing LUIS Endpoint Key in luis.ai, Stop 
 
 ### 3. Destroying the Infrastructure (and saving your SSL certificate for reuse)
 
-With the execution of the below script you can save your SSL certificate and then delete all generated infrastructure:
+With the execution of the below [script](Doc/Deploy/OneClickDestroy.md) you can save your SSL certificate and then delete all generated infrastructure:
 
 ```powershell
 # Example 1: Exports the SSL certificate as PFX File and destroys the infrastructure

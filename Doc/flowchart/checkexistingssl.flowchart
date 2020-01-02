@@ -1,0 +1,6 @@
+st=>start: Start
+e=>end: End
+t1=>operation: Read IaC Terraform execution output
+t2=>operation: Check if SSL certificate exists in KeyVault
+
+st->t1->t2->e

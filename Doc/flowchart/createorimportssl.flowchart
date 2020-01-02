@@ -1,0 +1,27 @@
+st=>start: Start
+e=>end: End
+val=>operation: Validation:>ValidateParameter.md
+check=>operation: CheckExistingSSL:>CheckExistingSSL.md
+deactivate=>operation: DeactivateSSL:>DeactivateSSL.md
+import=>operation: ImportSSL:>ImportSSL.md
+create=>operation: CreateSSL:>CreateSSL.md
+activate=>operation: ActivateSSL:>ActivateSSL.md
+
+succ=>condition: Success?
+exists=>condition: SSL Exists?
+force=>condition: FORCE = True?
+pfx=>condition: PFX provided?
+
+st->val->succ
+succ(yes)->force
+succ(no)->e
+force(no)->check
+force(yes)->pfx
+check->exists
+exists(yes)->e
+exists(no)->pfx
+pfx(yes)->import
+pfx(no)->create
+import->activate
+create->activate
+activate->e
