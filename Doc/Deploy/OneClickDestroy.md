@@ -34,6 +34,10 @@ After the script is successfully executed there should be nothing left
 ```
 
 
+## Related Scripts
+- [ExportSSL.ps1](ExportSSL.md)
+
+
 ## Flowchart
 
 <div align='center'>

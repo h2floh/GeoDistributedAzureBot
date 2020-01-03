@@ -13,11 +13,6 @@ This script will do following steps:
 
 After the script is successfully executed you should have a link to check you bot
 
-## Parameters
-
-| Name | Type | Required | Default | Description |
-| - | - | - | - | - |
-
 ## Examples
 
 ```powershell

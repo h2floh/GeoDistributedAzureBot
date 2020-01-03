@@ -1,6 +1,6 @@
 st=>start: Start
 e=>end: End
-ex=>operation: Export SSL:>ExportSSL.md
+ex=>operation: ExportSSL.ps1:>ExportSSL.md
 de=>operation: Execute Terraform destroy on IaC folder
 a=>condition: AUTOAPPROVE = True ?
 st->a
@@ -8,3 +8,5 @@ a(yes)->de
 a(no)->ex
 ex->de
 de->e
+
+

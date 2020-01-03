@@ -44,6 +44,20 @@ After the script is successfully executed the bot should be in a usable state
 ```
 
 
+## Related Scripts
+- [ValidateParameter.ps1](ValidateParameter.md)
+
+- [DeployInfrastructure.ps1](DeployInfrastructure.md)
+
+- [DeployLUIS.ps1](DeployLUIS.md)
+
+- [DeployBot.ps1](DeployBot.md)
+
+- [CreateOrImportSSL.ps1](CreateOrImportSSL.md)
+
+- [RetrieveWebChatLink.ps1](RetrieveWebChatLink.md)
+
+
 ## Flowchart
 
 <div align='center'>

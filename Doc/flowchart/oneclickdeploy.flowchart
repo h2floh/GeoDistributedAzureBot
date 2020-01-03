@@ -1,11 +1,11 @@
 st=>start: Start
 e=>end: End
-val=>operation: Validation:>ValidateParameter.md
-di=>operation: DeployInfrastructure:>DeployInfrastructure.md
-dl=>operation: DeployLUIS:>DeployLUIS.md
-db=>operation: DeployBot:>DeployBot.md
-cis=>operation: CreateOrImportSSL:>CreateOrImportSSL.md
-re=>operation: RetrieveWebChatLink:>RetrieveWebChatLink.md
+val=>operation: ValidateParameter.ps1:>ValidateParameter.md
+di=>operation: DeployInfrastructure.ps1:>DeployInfrastructure.md
+dl=>operation: DeployLUIS.ps1:>DeployLUIS.md
+db=>operation: DeployBot.ps1:>DeployBot.md
+cis=>operation: CreateOrImportSSL.ps1:>CreateOrImportSSL.md
+re=>operation: RetrieveWebChatLink.ps1:>RetrieveWebChatLink.md
 succ1=>condition: Success?
 succ2=>condition: Success?
 succ3=>condition: Success?
@@ -28,3 +28,20 @@ cis->succ5
 succ5(yes)->re
 succ5(no)->e
 re->e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
