@@ -42,6 +42,10 @@ After the script is successfully executed it should be ensured that the deployme
 ```
 
 
+## Related Scripts
+- [OneClickDeploy.ps1](OneClickDeploy.md)
+
+
 ## Flowchart
 
 <div align='center'>

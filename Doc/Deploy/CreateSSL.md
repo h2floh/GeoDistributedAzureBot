@@ -35,6 +35,10 @@ After the script is successfully executed the certificate should be stored in Ke
 ```
 
 
+## Related Scripts
+- [ActivateSSL.ps1](ActivateSSL.md)
+
+
 ## Flowchart
 
 <div align='center'>

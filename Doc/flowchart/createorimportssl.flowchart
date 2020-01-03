@@ -1,11 +1,11 @@
 st=>start: Start
 e=>end: End
-val=>operation: Validation:>ValidateParameter.md
-check=>operation: CheckExistingSSL:>CheckExistingSSL.md
-deactivate=>operation: DeactivateSSL:>DeactivateSSL.md
-import=>operation: ImportSSL:>ImportSSL.md
-create=>operation: CreateSSL:>CreateSSL.md
-activate=>operation: ActivateSSL:>ActivateSSL.md
+val=>operation: ValidateParameter.ps1:>ValidateParameter.md
+check=>operation: CheckExistingSSL.ps1:>CheckExistingSSL.md
+deactivate=>operation: DeactivateSSL.ps1:>DeactivateSSL.md
+import=>operation: ImportSSL.ps1:>ImportSSL.md
+create=>operation: CreateSSL.ps1:>CreateSSL.md
+activate=>operation: ActivateSSL.ps1:>ActivateSSL.md
 
 succ=>condition: Success?
 exists=>condition: SSL Exists?
@@ -25,3 +25,6 @@ pfx(no)->create
 import->activate
 create->activate
 activate->e
+
+
+

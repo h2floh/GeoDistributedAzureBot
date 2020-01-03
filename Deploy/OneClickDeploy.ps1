@@ -30,7 +30,7 @@ After the script is successfully executed the bot should be in a usable state
 None. You cannot pipe objects.
 
 .OUTPUTS
-None
+System.Boolean. Returns $True if executed successfully
 
 #>
 param(
@@ -80,7 +80,7 @@ param(
 $success = $True
 # Import Helper functions
 . "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
-# Tell who you are (See HelperFunction.ps1)
+# Tell who you are (See HelperFunctions.ps1)
 Write-WhoIAm
 
 # Validate Input parameter combination
@@ -129,3 +129,5 @@ if ($success -eq $False -or $validationresult -eq $False)
 } else {
     Write-ExecutionStatus -success $success
 }
+
+exit $success

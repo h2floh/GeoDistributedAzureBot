@@ -40,7 +40,7 @@ function Get-ParameterMarkdownTable {
         [object] $help
     )
 
-    $result = "| Name | Type | Required | Default | Description |`n| - | - | - | - | - |"
+    $result = "`n`n## Parameters`n`n| Name | Type | Required | Default | Description |`n| - | - | - | - | - |"
     
     #Write-Host $help
 
@@ -62,7 +62,13 @@ function Get-ParameterMarkdownTable {
         $result += "`n| $($_.name) | $($_.type.name) | $($_.required) | $($default) | $($description) |"
     })
 
-    return $result
+    if ($help.parameters -ne "")
+    {
+        return $result
+    } else {
+        return ""
+    }
+    
 }
 
 function Get-Examples {
@@ -93,6 +99,8 @@ function Get-FlowChart {
     $flowchartfile = "flowchart/$($fileparts[0]).flowchart"
     if (Test-Path -Path $flowchartfile)
     {
+        # Force LF style
+        (Get-Content $flowchartfile -Raw).Replace("`r`n","`n") | Set-Content $flowchartfile -Force
         # render flowchart
         diagrams flowchart $flowchartfile > $null 
 
@@ -101,7 +109,38 @@ function Get-FlowChart {
     } else {
         return ""
     }
+}
+
+function Get-RelatedScripts {
+    param (
+        # PS1 file
+        [Parameter(Mandatory=$True,HelpMessage="PS1 file")]
+        [object] $file
+    )
+
+    $script = Get-Content -Path $file.FullName
+
+    $results = $script | Select-String "([\w]+)\.ps1" -AllMatches
     
+    # Display only Unique values
+    $matches = $results.Matches.Value | Select-Object -uniq
+    # Remove self references
+    $matches = $matches -ne $file.name 
+    # Remove Helper Function references
+    $matches = $matches -ne "HelperFunctions.ps1"
+    $matches = $matches -ne "HelperFunction.ps1"
+    $matches.foreach({
+        $fileparts = $_.Split('.')
+        $related += "`n- [$_]($($fileparts[0]).md)`n"
+    })    
+    
+    #Write-Host $results.Matches
+
+    if ($null -ne $related) {
+        return "`n`n## Related Scripts$related"
+    } else {
+        return ""
+    }
 }
 
 function ConvertHelpToMarkdown {
@@ -129,12 +168,14 @@ function ConvertHelpToMarkdown {
         $markdown += "`n`n## Description`n`n$($help.description.text)"
 
         # Parameters
-        $parameters = Get-ParameterMarkdownTable -help $help
-        $markdown += "`n`n## Parameters`n`n$($parameters)"
+        $markdown += Get-ParameterMarkdownTable -help $help
 
         # Examples
         $examples = Get-Examples -help $help
         $markdown += "`n`n## Examples`n`n$($examples)"
+
+        # Get Related Script
+        $markdown += Get-RelatedScripts -file $file
 
         # flowchart
         $markdown += Get-FlowChart -file $file.name
