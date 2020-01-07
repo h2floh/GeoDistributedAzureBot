@@ -1,0 +1,94 @@
+# No CI trigger
+trigger: none
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - Deploy
+
+# Scheduled Build on change Mo-Sa
+schedules:
+- cron: "0 17 * * 1-6"
+  displayName: Daily 2am build on change (Seoul)
+  branches:
+    include:
+    - master
+  always: false
+- cron: "0 17 * * 0"
+  displayName: Weekly 2am build (Seoul)
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+- job: Deploy & Destroy
+  displayName: 'DOTNET Core build of sample GeoBot'  
+  pool:
+    name: Default
+  variables:
+  - group: VSEFlorian
+  steps:
+  - powershell: |
+    # generate random bot name
+    $BOTNAME = -join ((97..122) | Get-Random -Count 1 | % {[char]$_}) + -join ((48..57) + (97..122) | Get-Random -Count 9 | % {[char]$_})
+    
+    Write-Host "##vso[task.setvariable variable=BOTNAME]$BOTNAME"
+    pwsh: true
+    displayName: 'Generate Bot Name'
+
+  - powershell: |
+    # Azure Login
+    az login --service-principal --username $(ServicePrincipalID) --password $(ServicePrincipalSecret) --tenant $(TenantId)
+    
+    # Terraform
+    Write-Host "##vso[task.setvariable variable=ARM_CLIENT_ID]$(ServicePrincipalID)"
+    Write-Host "##vso[task.setvariable variable=ARM_CLIENT_SECRET]$(ServicePrincipalSecret)"
+    Write-Host "##vso[task.setvariable variable=ARM_SUBSCRIPTION_ID]$(SubscriptionId)"
+    Write-Host "##vso[task.setvariable variable=ARM_TENANT_ID]$(TenantId)"
+    pwsh: true
+    displayName: 'Prepare Azure connection for CLI & Terraform '
+
+  - powershell: |
+    # One Click Deploy
+    
+    Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -BOT_REGIONS @("koreacentral") -YOUR_CERTIFICATE_EMAIL dummy@dummy.h2floh.net -LETS_ENCRYPT_STAGING $True -AUTOAPPROVE $True
+    
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+    errorActionPreference: continue
+    pwsh: true
+    displayName: OneClickDeploy
+
+  - powershell: |
+    # One Click Destroy
+    
+    Deploy/OneClickDestroy.ps1 -BOT_NAME $env:BOTNAME -AUTOAPPROVE $True
+    
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+    errorActionPreference: continue
+    pwsh: true
+    displayName: OneClickDestroy
+    condition: always()
+
+  - powershell: |
+    # Az logout
+    az logout
+    
+    # Clear ENV Variables
+    # Terraform
+    $env:ARM_CLIENT_ID=""
+    $env:ARM_CLIENT_SECRET=""
+    $env:ARM_SUBSCRIPTION_ID=""
+    $env:ARM_TENANT_ID=""
+    failOnStderr: true
+    pwsh: true
+    displayName: 'Az Logout'
+    condition: always()
+
+
