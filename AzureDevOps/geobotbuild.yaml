@@ -1,0 +1,69 @@
+# No CI trigger
+trigger: none
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - GeoBot
+
+# Scheduled Build on change Mo-Sa
+schedules:
+- cron: "0 17 * * 1-6"
+  displayName: Daily 2am build on change (Seoul)
+  branches:
+    include:
+    - master
+  always: false
+- cron: "0 17 * * 0"
+  displayName: Weekly 2am build (Seoul)
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+- job: geobotnetcore
+  displayName: Sample GeoBot Build 
+  pool:
+    name: Azure Pipelines
+    vmImage: 'ubuntu-16.04'
+  variables:
+  - name: BuildConfiguration 
+    value: Release
+  - name: BuildPlatform 
+    value: 'any cpu'
+  - name: BuildProjects 
+    value: 'GeoBot/**/*.csproj'
+  - name: TestProjects
+    value: 'GeoBot/**/*[Tt]ests/*.csproj'
+  steps:
+  - task: DotNetCoreCLI@2
+    displayName: Restore
+    inputs:
+      command: restore
+      projects: '$(BuildProjects)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Build
+    inputs:
+      projects: '$(BuildProjects)'
+      arguments: '--configuration $(BuildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Test
+    inputs:
+      command: test
+      projects: '$(TestProjects)'
+      arguments: '--configuration $(BuildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    displayName: Publish
+    inputs:
+      command: publish
+      publishWebProjects: True
+      arguments: '--configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)'
+      zipAfterPublish: False
