@@ -1,7 +1,7 @@
 # Azure Bot Framework based Geo Distributed Bot with failover capability
 
 [![Test OneClickDeploy](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Deploy-CI?branchName=master&label=Test%20OneClickDeploy)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=1)
-[![Build Status Sample GeoBot](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-ASP.NET%20Core-CI?branchName=master&label=Build%20GeoBot)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=2)
+[![Build Status Sample GeoBot](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Bot?branchName=master&label=Build%20GeoBot)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=2)
 
 This repo contains deployment scripts and a sample bot to spin up a geo distributed and geo failover capable bot, which can be accessed like any other Azure Bot Framework Service based bot via the Bot Framework Service Channels (Directline/WebChat and may more).
 
