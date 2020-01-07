@@ -1,0 +1,58 @@
+# CI trigger
+trigger: 
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - AzureDevOps/Agent
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - AzureDevOps/Agent
+
+# Scheduled Build on change Mo-Sa
+schedules:
+- cron: "30 17 * * 1-6"
+  displayName: Daily 2:30am build on change (Seoul)
+  branches:
+    include:
+    - master
+  always: false
+- cron: "30 17 * * 0"
+  displayName: Weekly 2:30am build (Seoul)
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+- job: pipelineagent_build
+  displayName: 'Create and Push Pipeline Agent image'
+  pool:
+    name: Azure Pipelines
+    vmImage: 'ubuntu-16.04'
+  variables:
+  - name: RepoName
+    value: h2floh/geobotagent
+  steps:
+  - task: Docker@0
+    displayName: 'Build an image'
+    inputs:
+      dockerFile: AzureDevOps/Agent/pipelineagent.dockerfile
+      imageName: '$(RepoName):$(Build.BuildId)'
+      includeLatestTag: true
+
+  - task: Docker@0
+    displayName: 'Push an image'
+    inputs:
+      containerregistrytype: 'Container Registry'
+      imageName: '$(RepoName):$(Build.BuildId)'
+      dockerRegistryConnection: 'DockerHub h2floh'
+      action: 'Push an image'
+      includeLatestTag: true

@@ -1,3 +1,8 @@
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
 # No CI trigger
 trigger: none
 
@@ -12,14 +17,14 @@ pr:
 
 # Scheduled Build on change Mo-Sa
 schedules:
-- cron: "0 17 * * 1-6"
-  displayName: Daily 2am build on change (Seoul)
+- cron: "0 18 * * 1-6"
+  displayName: Daily 3am build on change (Seoul)
   branches:
     include:
     - master
   always: false
-- cron: "0 17 * * 0"
-  displayName: Weekly 2am build (Seoul)
+- cron: "0 18 * * 0"
+  displayName: Weekly 3am build (Seoul)
   branches:
     include:
     - master
@@ -29,7 +34,9 @@ jobs:
 - job: deploy_destroy
   displayName: 'Deploy & Destroy'
   pool:
-    name: Default
+    name: Azure Pipelines
+    vmImage: 'ubuntu-16.04'
+  container: geobotagent
   variables:
   - group: VSEFlorian
   steps:
@@ -55,7 +62,7 @@ jobs:
   - pwsh: |
       # One Click Deploy
       
-      Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -BOT_REGIONS @("koreacentral") -YOUR_CERTIFICATE_EMAIL dummy@dummy.h2floh.net -LETS_ENCRYPT_STAGING $True -AUTOAPPROVE $True
+      Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -YOUR_CERTIFICATE_EMAIL dummy@dummy.h2floh.net -LETS_ENCRYPT_STAGING $True -AUTOAPPROVE $True
       
       # $Lastexitcode $True -> Success, we have to change it to 0
       exit -not $LASTEXITCODE

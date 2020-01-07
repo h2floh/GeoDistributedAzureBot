@@ -9,7 +9,7 @@ RUN apt-get -y install pwgen
 # Install cURL
 RUN apt-get -y install curl
 # Install Azure CLI with one command
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash -
 
 # WORKDIR
 WORKDIR /

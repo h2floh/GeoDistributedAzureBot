@@ -1,0 +1,60 @@
+# CI trigger
+trigger: 
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - SSL/Docker
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - SSL/Docker
+
+# Scheduled Build on change Mo-Sa
+schedules:
+- cron: "45 17 * * 1-6"
+  displayName: Daily 2:45am build on change (Seoul)
+  branches:
+    include:
+    - master
+  always: false
+- cron: "45 17 * * 0"
+  displayName: Weekly 2:45am build (Seoul)
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+- job: keyvaultcertbot_build
+  displayName: 'Create and Push KeyVault CertBot image'
+  pool:
+    name: Azure Pipelines
+    vmImage: 'ubuntu-16.04'
+  variables:
+  - name: RepoName
+    value: h2floh/letsencrypt
+  - name: ImageTag
+    value: keyvault
+  steps:
+  - task: Docker@0
+    displayName: 'Build an image'
+    inputs:
+      dockerFile: SSL/Docker/Dockerfile
+      imageName: '$(RepoName):$(ImageTag)'
+      includeLatestTag: false
+
+  - task: Docker@0
+    displayName: 'Push an image'
+    inputs:
+      containerregistrytype: 'Container Registry'
+      imageName: '$(RepoName):$(ImageTag)'
+      dockerRegistryConnection: 'DockerHub h2floh'
+      action: 'Push an image'
+      includeLatestTag: false
