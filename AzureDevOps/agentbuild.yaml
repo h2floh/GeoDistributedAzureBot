@@ -41,6 +41,7 @@ jobs:
   - name: RepoName
     value: h2floh/geobotagent
   steps:
+  
   - task: Docker@0
     displayName: 'Build an image'
     inputs:
@@ -56,3 +57,4 @@ jobs:
       dockerRegistryConnection: 'DockerHub h2floh'
       action: 'Push an image'
       includeLatestTag: true
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
