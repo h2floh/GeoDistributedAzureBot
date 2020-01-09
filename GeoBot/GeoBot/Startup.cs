@@ -32,6 +32,16 @@ namespace GeoBot
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("all",
+                builder =>
+                {
+                    builder.AllowAnyOrigin();
+                });
+            });
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // The following line enables Application Insights telemetry collection.
@@ -83,6 +93,12 @@ namespace GeoBot
 
             // Add Healthcheck module
             services.AddSingleton<Healthcheck>();
+
+            // Add Speech module
+            services.AddSingleton<Speech>();
+
+            // Add Directline module
+            services.AddSingleton<Directline>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -100,6 +116,7 @@ namespace GeoBot
             app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseWebSockets();
+            app.UseCors("all");
             app.UseMvc();
         }
     }

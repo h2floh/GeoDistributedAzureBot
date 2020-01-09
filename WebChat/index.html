@@ -6,7 +6,7 @@
     <script>
         var params = window.location.search.slice(1).split("&");
         var botname = "";
-        var key = "";
+        var endpoint = "";
 
         for (var p = 0; p < params.length; p++) {
             var nv = params[p].split("=");
@@ -16,23 +16,72 @@
             if (name == "bot") {
                 botname = value;
             }
-            if (name == "key") {
-                key = value;
+            if (name == "endpoint") {
+                endpoint = value;
             }
         }
 
-        window.WebChat.renderWebChat({
-                directLine: window.WebChat.createDirectLine({
-                    token: key
-                }),
-                userID: 'geouser',
-                username: 'Geo User',
-                locale: 'en-US',
-                botAvatarInitials: 'GB',
-                userAvatarInitials: 'GU'
-            },
-            document.getElementById('webchat')
-        );
+        function createFetchSpeechServicesCredentials(){
+            let expireAfter = 0;
+            let lastPromise;
+
+            return () => {
+                if (Date.now() > expireAfter) {
+                    const speechServiceUri = endpoint + "/speech/token";
+                    const speechServicesTokenResPromise = fetch(speechServiceUri, { method: 'GET' });
+
+                    expireAfter = Date.now() + 300000;
+                    lastPromise = speechServicesTokenResPromise.then(
+                        res => res.json(),
+                        err => {
+                            lastPromise = null;
+                            return Promise.reject(err);
+                        }
+                    );
+                }
+                return lastPromise;
+            }
+        }
+
+        async function getDirectlineToken(){
+            let tokenGenerateServiceUri = endpoint + "/directline/token";
+            const directlineToken = await fetch(tokenGenerateServiceUri, { method: 'GET' })
+                .then((res) => res.json())
+                .then(function(result){
+                    return result.token;
+                })
+                .catch(err => console.log(err));
+            return directlineToken;
+        }
+
+        const fetchSpeechServices = createFetchSpeechServicesCredentials();
+
+        (async function() {
+
+            let speechToken = (await fetchSpeechServices()).token;
+            let speechRegion = (await fetchSpeechServices()).region;
+            let directlineToken = await getDirectlineToken();
+
+            const webSpeechPonyfillFactory = await window.WebChat.createCognitiveServicesSpeechServicesPonyfillFactory({
+                authorizationToken: speechToken,
+                region: speechRegion
+            });
+
+            window.WebChat.renderWebChat({
+                    directLine: window.WebChat.createDirectLine({
+                        token: directlineToken
+                    }),
+                    userID: 'geouser',
+                    username: 'Geo User',
+                    locale: 'en-US',
+                    botAvatarInitials: 'GB',
+                    userAvatarInitials: 'GU',
+                    webSpeechPonyfillFactory
+                },
+                document.getElementById('webchat')
+            );
+        })().catch(err => console.error(err));
+        
     </script>
 </body>
 
