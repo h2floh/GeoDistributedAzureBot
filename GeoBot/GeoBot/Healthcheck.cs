@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace GeoBot
 {
@@ -39,9 +41,14 @@ namespace GeoBot
             var cosmosDBresult = await CheckCosmosDB();
             response.Headers.Add("CosmosDBInnerStatusCode", cosmosDBresult.StatusCode);
             response.Headers.Add("CosmosDBInnerStatusReason", cosmosDBresult.StatusMessage);
+            // Check Speech
+            var speechResult = await CheckSpeech();
+            response.Headers.Add("SpeechInnerStatusCode", speechResult.StatusCode);
+            response.Headers.Add("SpeechInnerStatusReason", speechResult.StatusMessage);
 
             // Check overall success
-            if (lUISresult.Success && cosmosDBresult.Success) {
+            if (lUISresult.Success && cosmosDBresult.Success)
+            {
                 response.StatusCode = 200;
             }
         }
@@ -85,12 +92,12 @@ namespace GeoBot
                     // read container - to check if until container level all is working
                     using (CosmosClient client = new CosmosClient(configuration["CosmosDBStateStoreEndpoint"], configuration["CosmosDBStateStoreKey"]))
                     {
-                        
+
                         var container = client.GetContainer(configuration["CosmosDBStateStoreDatabaseId"],
                                                             configuration["CosmosDBStateStoreCollectionId"]);
-                        
+
                         var readContainer = await container.ReadContainerAsync();
-                        
+
                         // Return Success
                         return new HealthcheckResult(true, readContainer.StatusCode.ToString(), "CosmosDB account, database and container accessible");
                     }
@@ -113,12 +120,113 @@ namespace GeoBot
 
                     return new HealthcheckResult(false, statusCode, e.Message);
                 }
-               
+
             }
             else
             {
                 // In Case CosmosDB as state store is not configured - skip healthcheck
                 return new HealthcheckResult(true, "200", "CosmosDB not configured");
+            }
+        }
+
+        public async Task<string> GetSpeechToken()
+        {
+            // Check on Speech Endpoint
+            var speechKeyKey = "SpeechAPIKey" + configuration["region"];
+            var speechHostNameKey = "SpeechAPIHostName" + configuration["region"];
+            var speechIsConfigured = !string.IsNullOrEmpty(configuration[speechKeyKey]) && !string.IsNullOrEmpty(configuration[speechHostNameKey]);
+            if (speechIsConfigured)
+            {
+                var hostname = configuration[speechHostNameKey];
+                var speechUrl = $"{hostname}/sts/v1.0/issuetoken";
+                var speechKey = configuration[speechKeyKey];
+
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", speechKey);
+                    UriBuilder uriBuilder = new UriBuilder(speechUrl);
+
+                    var result = await client.PostAsync(uriBuilder.Uri.AbsoluteUri, null);
+                    return await result.Content.ReadAsStringAsync();
+                }
+            }
+            else
+            {
+                // In Case Speech is not configured - skip healthcheck
+                return null;
+            }
+        }
+
+        public string GetSpeechRegion()
+        {
+            var speechKeyKey = "SpeechAPIKey" + configuration["region"];
+            var speechHostNameKey = "SpeechAPIHostName" + configuration["region"];
+            var speechIsConfigured = !string.IsNullOrEmpty(configuration[speechKeyKey]) && !string.IsNullOrEmpty(configuration[speechHostNameKey]);
+            if (speechIsConfigured)
+            {
+                return configuration["region"];
+            }
+            else
+            {
+                // In Case Speech is not configured - skip healthcheck
+                return null;
+            }
+        }
+
+        public async Task<string> GetDirectlineToken()
+        {
+            // Check on Speech Endpoint
+            var directlineIsConfigured = !string.IsNullOrEmpty(configuration["DirectlineKey"]);
+            if (directlineIsConfigured)
+            {
+                var directlineKey = configuration["DirectlineKey"];
+                var directlineUrl = $"https://directline.botframework.com/v3/directline/tokens/generate";
+
+                using (var client = new HttpClient())
+                {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post,directlineUrl);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", directlineKey);
+                    var userId = $"dl_{Guid.NewGuid()}";
+
+                    request.Content = new StringContent(
+                        JsonConvert.SerializeObject(
+                            new { User = new { Id = userId } }),
+                            Encoding.UTF8,
+                            "application/json");
+
+                    var result = await client.SendAsync(request);
+                    string token = String.Empty;
+
+                    if (result.IsSuccessStatusCode)
+                    {
+                        var body = await result.Content.ReadAsStringAsync();
+                        token = JsonConvert.DeserializeObject<DirectLineToken>(body).token;
+
+                        return token;
+                    }
+                    else
+                    {
+                        return "There is something wrong when issue the directline token";
+                    }
+                }
+            }
+            else
+            {
+                // In Case Directline is not configured
+                return null;
+            }
+        }
+
+        private async Task<HealthcheckResult> CheckSpeech()
+        {
+            var speechTokenResult = await GetSpeechToken();
+            if (String.IsNullOrEmpty(speechTokenResult))
+            {
+                return new HealthcheckResult(true, "200", "Speech not configured");
+            }
+            else
+            {
+                return new HealthcheckResult(true, "200", "Speech not configured");
             }
         }
 
@@ -136,4 +244,11 @@ namespace GeoBot
             internal string StatusMessage { get; }
         }
     }
+}
+
+public class DirectLineToken
+{
+    public string conversationId { get; set; }
+    public string token { get; set; }
+    public int expires_in { get; set; }
 }

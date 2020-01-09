@@ -352,3 +352,6 @@ MigrationBackup/
 # Terraform
 .terraform
 *.tfstate*
+
+# AppSettings
+appsettings.json
