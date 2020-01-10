@@ -11,11 +11,11 @@ namespace GeoBot.Controllers
     [ApiController]
     public class SpeechController : ControllerBase
     {
-        private readonly Healthcheck healthcheck;
+        private readonly Speech speech;
 
-        public SpeechController(Healthcheck healthcheck)
+        public SpeechController(Speech speech)
         {
-            this.healthcheck = healthcheck;
+            this.speech = speech;
         }
 
         [Route("speech/token")]
@@ -24,7 +24,7 @@ namespace GeoBot.Controllers
         {
             Token token = new Token
             {
-                token = await healthcheck.GetSpeechToken()
+                token = await speech.GetSpeechToken()
             };
 
             return token;
@@ -36,11 +36,10 @@ namespace GeoBot.Controllers
         {
             Token token = new Token
             {
-                token = await healthcheck.GetSpeechToken()
+                token = await speech.GetSpeechToken()
             };
 
             return token;
         }
     }
-    
 }

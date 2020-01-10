@@ -7,14 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeoBot.Controllers
 {
-    
     [ApiController]
     public class DirectlineController : ControllerBase
     {
-        private readonly Healthcheck healthcheck;
-        public DirectlineController(Healthcheck healthcheck)
+        private readonly Directline directline;
+        public DirectlineController(Directline directline)
         {
-            this.healthcheck = healthcheck;
+            this.directline = directline;
         }
 
         [Route("directline/token")]
@@ -23,12 +22,10 @@ namespace GeoBot.Controllers
         {
             Token token = new Token
             {
-                token = await healthcheck.GetDirectlineToken()
+                token = await directline.GetDirectlineToken()
             };
 
             return token;
         }
     }
-
-   
 }
