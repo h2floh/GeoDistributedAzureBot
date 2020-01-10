@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GeoBot.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeoBot.Controllers
 {
     
     [ApiController]
-    public class GetDirectlineTokenController : ControllerBase
+    public class DirectlineController : ControllerBase
     {
         private readonly Healthcheck healthcheck;
-        public GetDirectlineTokenController(Healthcheck healthcheck)
+        public DirectlineController(Healthcheck healthcheck)
         {
             this.healthcheck = healthcheck;
         }
@@ -29,9 +30,5 @@ namespace GeoBot.Controllers
         }
     }
 
-    public class Token
-    {
-        public string token { get; set; }
-    }
-
+   
 }

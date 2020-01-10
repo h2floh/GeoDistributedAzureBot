@@ -19,7 +19,7 @@ namespace GeoBot
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .ConfigurationFromKeyVault()
+                //.ConfigurationFromKeyVault()
                 .ConfigureLogging((logging) =>
                 {
                     logging.AddDebug();
