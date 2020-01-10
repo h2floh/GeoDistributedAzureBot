@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeoBot.Controllers
 {
-    [Route("getdirectlinetoken")]
+    
     [ApiController]
     public class GetDirectlineTokenController : ControllerBase
     {
@@ -15,6 +15,8 @@ namespace GeoBot.Controllers
         {
             this.healthcheck = healthcheck;
         }
+
+        [Route("directline/token")]
         [HttpGet]
         public async Task<Token> GetAsync()
         {
