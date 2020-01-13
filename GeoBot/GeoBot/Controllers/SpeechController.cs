@@ -32,14 +32,9 @@ namespace GeoBot.Controllers
 
         [Route("speech/region")]
         [HttpGet]
-        public async Task<Token> GetRegionAsync()
-        {
-            Token token = new Token
-            {
-                token = await speech.GetSpeechToken()
-            };
-
-            return token;
+        public string GetRegionAsync()
+        {            
+            return speech.GetSpeechRegion();
         }
     }
 }
