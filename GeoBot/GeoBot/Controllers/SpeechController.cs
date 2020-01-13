@@ -24,17 +24,11 @@ namespace GeoBot.Controllers
         {
             Token token = new Token
             {
-                token = await speech.GetSpeechToken()
+                token = await speech.GetSpeechToken(),
+                region = speech.GetSpeechRegion()
             };
 
             return token;
-        }
-
-        [Route("speech/region")]
-        [HttpGet]
-        public string GetRegionAsync()
-        {            
-            return speech.GetSpeechRegion();
         }
     }
 }
