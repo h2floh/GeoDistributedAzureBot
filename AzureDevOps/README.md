@@ -28,7 +28,7 @@ Builds the .NET Core Bot solution. Get's activated by PR including folder `GeoBo
 
 > :warning: This pipeline's purpose is to test the standalone execution of `OneClick` scripts. It does not use a remote state store for Terraform and can therefore not be used for CI/CD pipelines where the environment is not meant to been destroyed again.
 
-Uses a [container build agent](#-Container-Agent-Build) to execute the pipeline. Due to DNS errors (see [this issue](#22)) on hosted build agents it is using a custom Ubuntu 19 build agent with docker installed.
+Uses a [container build agent](#-Container-Agent-Build) to execute the pipeline. Due to DNS errors (see [this issue](https://github.com/h2floh/GeoDistributedAzureBot/issues/22) on hosted build agents it is using a custom Ubuntu 19 build agent with docker installed.
 
 Testing the execution of the `OneClick` scripts. Get's activated by PR including folder `Deploy`. Regularly scheduled weekly and daily if sources changed on `master`.
 
