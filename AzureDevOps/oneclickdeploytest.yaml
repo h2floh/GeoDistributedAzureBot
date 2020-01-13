@@ -14,6 +14,7 @@ pr:
   paths:
     include:
     - Deploy
+    - AzureDevOps/oneclickdeploytest.yaml
 
 # Scheduled Build on change Mo-Sa
 schedules:
@@ -34,11 +35,17 @@ jobs:
 - job: deploy_destroy
   displayName: 'Deploy & Destroy'
   pool:
-    name: Azure Pipelines
-    vmImage: 'ubuntu-16.04'
+    name: Default
+    demands:
+    - docker
   container: geobotagent
   variables:
-  - group: VSEFlorian
+  # This group must include following variables: 
+  # - ServicePrincipalID (Client/App ID)
+  # - ServicePrincipalSecret (Client Secret)
+  # - TenantId (AAD Id)
+  # - SubscriptionId (Azure Subscription)
+  - group: SubscriptionDetails
   steps:
   - pwsh: |
       # generate random bot name

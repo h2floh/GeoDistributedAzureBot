@@ -9,6 +9,7 @@ pr:
   paths:
     include:
     - GeoBot
+    - AzureDevOps/geobotbuild.yaml
 
 # Scheduled Build on change Mo-Sa
 schedules:

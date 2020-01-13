@@ -15,6 +15,7 @@ pr:
   paths:
     include:
     - SSL/Docker
+    - AzureDevOps/keyvaultcertbotbuild.yaml
 
 # Scheduled Build on change Mo-Sa
 schedules:
