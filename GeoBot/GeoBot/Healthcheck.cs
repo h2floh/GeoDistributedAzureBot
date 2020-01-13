@@ -47,7 +47,7 @@ namespace GeoBot
             response.Headers.Add("SpeechInnerStatusReason", speechResult.StatusMessage);
 
             // Check overall success
-            if (lUISresult.Success && cosmosDBresult.Success)
+            if (lUISresult.Success && cosmosDBresult.Success && speechResult.Success)
             {
                 response.StatusCode = 200;
             }
@@ -131,16 +131,51 @@ namespace GeoBot
 
         private async Task<HealthcheckResult> CheckSpeech()
         {
-            Speech speech = new Speech(configuration, null);
-            var speechTokenResult = await speech.GetSpeechToken();
-            if (String.IsNullOrEmpty(speechTokenResult))
+            // Check on LUIS Endpoint
+            var speechKeyKey = "SpeechAPIKey" + configuration["region"];
+            var speechHostNameKey = "SpeechAPIHostName" + configuration["region"];
+
+            var speechIsConfigured = !string.IsNullOrEmpty(configuration[speechKeyKey]) && !string.IsNullOrEmpty(configuration[speechHostNameKey]);
+            if (speechIsConfigured)
             {
-                return new HealthcheckResult(true, "200", "Speech not configured");
+                try
+                {
+                    // Get Speech service token
+                    Speech speech = new Speech(configuration, null);
+                    var speechTokenResult = await speech.GetSpeechToken();
+
+                    var speechUrl = $"https://{configuration["region"]}.tts.speech.microsoft.com/cognitiveservices/voices/list";
+                    
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", speechTokenResult);
+                    var requestMessage = new HttpRequestMessage(HttpMethod.Get, speechUrl);
+                    var responseMessage = await httpClient.SendAsync(requestMessage);
+                    
+                    return new HealthcheckResult(responseMessage.IsSuccessStatusCode, responseMessage.StatusCode.ToString(), responseMessage.ReasonPhrase);
+                }
+                catch (Exception e)
+                {
+                    // Return failure
+                    var statusCode = "503";
+                    // Try to extract status code from expeption message: Response status code does not indicate success: 401 
+                    try
+                    {
+                        var rx = new Regex(@"Response status code does not indicate success: (\d{3})");
+                        Match match = rx.Match(e.Message);
+                        if (match.Success)
+                        {
+                            statusCode = match.Groups[1].Value;
+                        }
+                    }
+                    catch { }
+
+                    return new HealthcheckResult(false, statusCode, e.Message);
+                }
             }
             else
             {
                 return new HealthcheckResult(true, "200", "Speech not configured");
             }
+            
         }
 
         // Data Object
