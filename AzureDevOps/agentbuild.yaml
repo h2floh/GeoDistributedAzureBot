@@ -15,6 +15,7 @@ pr:
   paths:
     include:
     - AzureDevOps/Agent
+    - AzureDevOps/agentbuild.yaml
 
 # Scheduled Build on change Mo-Sa
 schedules:
