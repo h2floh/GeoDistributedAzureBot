@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using GeoBot.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeoBot.Controllers
@@ -18,14 +17,19 @@ namespace GeoBot.Controllers
 
         [Route("directline/token")]
         [HttpGet]
-        public async Task<Token> GetAsync()
+        public async Task<DirectlineToken> GetAsync()
         {
-            Token token = new Token
+            DirectlineToken directlineToken = new DirectlineToken
             {
                 token = await directline.GetDirectlineToken()
             };
 
-            return token;
+            return directlineToken;
         }
+    }
+
+    public class DirectlineToken
+    {
+        public string token { get; set; }
     }
 }
