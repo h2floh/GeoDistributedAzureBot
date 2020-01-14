@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using GeoBot.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeoBot.Controllers
@@ -20,15 +19,22 @@ namespace GeoBot.Controllers
 
         [Route("speech/token")]
         [HttpGet]
-        public async Task<Token> GetTokenAsync()
+        public async Task<SpeechToken> GetTokenAsync()
         {
-            Token token = new Token
+            SpeechToken speechToken = new SpeechToken
             {
                 token = await speech.GetSpeechToken(),
                 region = speech.GetSpeechRegion()
             };
 
-            return token;
+            return speechToken;
         }
     }
+
+    public class SpeechToken
+    {
+        public string token { get; set; }
+        public string region { get; set; }
+    }
+
 }
