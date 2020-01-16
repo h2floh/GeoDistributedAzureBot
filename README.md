@@ -70,6 +70,24 @@ Please report any problems you face under issues!
 - [Node.js & npm](https://nodejs.org/en/download/) >= 8.5
 - [LUIS CLI](https://github.com/Microsoft/botbuilder-tools/tree/master/packages/LUIS) >=2.6.2 
 - Be logged into Azure CLI and having Subscription Level Owner or Contributor rights on the "isDefault" marked subscription
+- You can also running the deployment in the docker container following the steps below:
+     1. Clone the repo to the local driver;
+     2. Install the image of  the h2floh/geobotagent which has the prerequisite software installed: 
+
+         `
+         docker pull  h2floh/geobotagent
+         `
+
+     3. In your docker setting, ensure the driver contains the repo is shared and would be available to your containers created in next step. 
+     4. Execute the command on your terminial: 
+
+         `
+         docker run -it --name <botname> --mount type=bind,source="$(pwd)"/GeoDistributedAzureBot,target=/<foldername> h2floh/geobotagent:latest bin/bash
+         `
+
+         The command is to [mount](https://docs.docker.com/storage/bind-mounts/) an existing folder to the docker container and start the container from bash terminal. The mounted files will be located in the target place specified by the foldername. 
+
+     5. Run the deployment steps. 
 
 ### Summary of steps
 
