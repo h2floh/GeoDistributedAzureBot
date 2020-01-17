@@ -66,10 +66,29 @@ Write-Host "## 2. Ensure Storage Account and Container for Terraform Remote Stat
 $account = az storage account create --resource-group $RESOURCE_GROUP_NAME --name $STORAGE_ACCOUNT_NAME --kind StorageV2 --sku Standard_LRS --https-only true | ConvertFrom-Json
 $success = $success -and $?
 
-$currentClient = az ad signed-in-user show | ConvertFrom-Json
+# Get info around current connection
+$currentConnection = az account show | ConvertFrom-Json
 $success = $success -and $?
 
-az role assignment create --role "Storage Blob Data Contributor" --assignee-object-id $currentClient.objectId --assignee-principal-type $currentClient.objectType --scope $account.id > $null
+# Save Principal Type and Id
+$principalType = $currentConnection.user.type
+$principalId = ""
+
+if($principalType -eq "user")
+{
+    # If type is user object Id of user has to be retrieved
+    $currentUser = az ad signed-in-user show | ConvertFrom-Json
+    $principalId = $currentUser.objectId
+}
+elseif ($principalType -eq "servicePrincipal")
+{
+    # If type is servicePrincipal object Id of sp has to be retrieved
+    $currentSp = az ad sp show --id $currentConnection.user.name | ConvertFrom-Json
+    $principalId = $currentSp.objectId
+}
+
+# Finally we can assign the role (ServicePrincipal role needs "Contributor", "Key Vault Contributor" and "User Access Administrator" role at subscription level to succeed)
+az role assignment create --role "Storage Blob Data Contributor" --assignee-object-id $principalId --assignee-principal-type $principalType --scope $account.id > $null
 $success = $success -and $?
 
 # Wait until rights are propagated on failure
