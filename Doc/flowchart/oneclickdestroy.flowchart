@@ -1,12 +1,18 @@
 st=>start: Start
 e=>end: End
 ex=>operation: ExportSSL.ps1:>ExportSSL.md
+re=>operation: Retrieve info about State Store
 de=>operation: Execute Terraform destroy on IaC folder
+rm=>operation: Remove Terraform State Store resources
+s=>condition: Success = True?
 a=>condition: AUTOAPPROVE = True ?
 st->a
-a(yes)->de
+a(yes)->re
 a(no)->ex
-ex->de
-de->e
-
+ex->re
+re->de
+de->s
+s(yes)->rm
+s(no)->e
+rm->e
 

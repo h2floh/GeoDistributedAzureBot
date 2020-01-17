@@ -165,10 +165,7 @@ resource "azurerm_cognitive_account" "LUISAuthoring" {
   resource_group_name = azurerm_resource_group.GeoBot.name
   kind                = "LUIS.Authoring"
 
-  sku {
-    name = "F0" // S0 not available
-    tier = "Free" // Standard not available
-  }
+  sku_name = "F0" // S0 not available
 }
 
 // Saving CosmosDB Endpoint in KeyVault (for use by Bot Application)

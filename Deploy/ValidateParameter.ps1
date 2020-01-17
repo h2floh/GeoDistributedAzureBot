@@ -83,6 +83,8 @@ if ($BOT_NAME -ne "")
         $dnscheck = (Check-ServiceAvailability -Service "TrafficManager" -FQDN "$BOT_NAME.trafficmanager.net") -and $dnscheck
         # KeyVault
         $dnscheck = (Check-ServiceAvailability -Service "KeyVault" -FQDN "$BOT_NAME.vault.azure.net") -and $dnscheck
+        # Storage Account for State Store
+        $dnscheck = (Check-ServiceAvailability -Service "KeyVault" -FQDN "$($BOT_NAME)tfs.blob.core.windows.net") -and $dnscheck
         # Skipping checks for WebApp for now
 
         if (-not $dnscheck)
@@ -93,7 +95,7 @@ if ($BOT_NAME -ne "")
 } 
 else {
     # Check most likly executed after creation of Infrastructure, load TrafficManager values from Terraform run
-    $TrafficManager = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+    $TrafficManager =  Get-TerraformOutput("trafficManager") | ConvertFrom-Json
 }
 
 # Check Azure Login

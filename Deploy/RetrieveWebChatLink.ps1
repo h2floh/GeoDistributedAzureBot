@@ -34,7 +34,7 @@ Write-WhoIAm
 
 # 1. Export SSL Certificate
 Write-Host "## 1. Retrieve Bot Data from Terraform infrastructure execution"
-$Bot = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json bot | ConvertFrom-Json
+$Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
 $success = $success -and $?
 
 # 2. Retrieve DirectLine Secret and generate Link

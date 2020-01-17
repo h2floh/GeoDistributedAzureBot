@@ -34,7 +34,7 @@ Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$KeyVault = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$KeyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
 
 # 2. Check if certificate exists in Key Vault
 Write-Host "## 2. Check if certificate exists in Key Vault"

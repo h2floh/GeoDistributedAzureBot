@@ -9,7 +9,9 @@ One Click Destroy for Geo Distributed Bot Solution
 This script will do following steps:
 
 1. Export Certificate to file [only if not in AUTOAPPROVE mode]
-2. Destroy rest of environment with Terraform
+2. Read Terraform State resources from KeyVault
+3. Destroy Bot environment with Terraform
+4. Destroy Terraform State resources
 
 After the script is successfully executed there should be nothing left
 
@@ -36,6 +38,8 @@ After the script is successfully executed there should be nothing left
 
 ## Related Scripts
 - [ExportSSL.ps1](ExportSSL.md)
+
+- [InitTerraform.ps1](InitTerraform.md)
 
 
 ## Flowchart

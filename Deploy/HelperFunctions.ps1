@@ -157,3 +157,57 @@ function Get-ScriptPathTerraformApply {
         return $MyInvocation.PSScriptRoot
     }
 }
+
+function Get-TerraformOutput {
+    <#
+    .SYNOPSIS
+    Function wraps the retrieval of Terraform output (due to limitations in terraform output command https://github.com/hashicorp/terraform/issues/17300)
+        
+    .OUTPUTS
+    System.String. Raw Terraform Output
+    #>
+    param(
+        [Parameter(Mandatory=$True, HelpMessage="Terraform Output Object")]
+        [string] $OUTPUTOBJECT,
+
+        [Parameter(HelpMessage="Terraform folder relative to Deploy/")]
+        [string] $TERRAFORM_FOLDER = "IaC"
+    )
+
+    $curr_location = Get-Location
+    Set-Location "$(Get-ScriptPath)\$TERRAFORM_FOLDER"
+    $result = terraform output -json $OUTPUTOBJECT
+    $success = $success -and $?
+    Set-Location $curr_location
+
+    return $result
+}
+
+function Invoke-Terraform {
+    <#
+    .SYNOPSIS
+    Invokes Terraform command within the Terraform folder with parameters
+    #>
+    param(
+        [Parameter(Mandatory=$True, HelpMessage="Terraform folder relative to 'Deploy/'")]
+        [string] $TERRAFORM_FOLDER,
+
+        [Parameter(Mandatory=$True, HelpMessage="AUTOAPPROVE")]
+        [bool] $AUTOAPPROVE,
+
+        [Parameter(HelpMessage="Terraform Action (Apply/Destroy)")]
+        [string] $ACTION = "apply",
+
+        [Parameter(HelpMessage="Terraform Variables")]
+        [string[]] $INPUTVARS
+    )
+
+    $curr_location = Get-Location
+    Set-Location "$(Get-ScriptPath)\$TERRAFORM_FOLDER"
+    Invoke-Expression "terraform $ACTION $INPUTVARS $(Get-TerraformAutoApproveFlag $AUTOAPPROVE); `$TFEXEC = `$?;"
+    Set-Location $curr_location
+
+    # Forward Execution result of Terraform
+    $LASTEXITCODE=$TFEXEC
+    $global:LastExitCode=$TFEXEC
+}
