@@ -28,8 +28,7 @@ namespace GeoBot
             var speechIsConfigured = !string.IsNullOrEmpty(configuration[speechKeyKey]) && !string.IsNullOrEmpty(configuration[speechHostNameKey]);
             if (speechIsConfigured)
             {
-                var hostname = configuration[speechHostNameKey];
-                var speechUrl = $"{hostname}/sts/v1.0/issuetoken";
+                var speechUrl = configuration[speechHostNameKey];
                 var speechKey = configuration[speechKeyKey];
 
                 using (var client = new HttpClient())
