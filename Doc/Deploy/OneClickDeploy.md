@@ -47,6 +47,8 @@ After the script is successfully executed the bot should be in a usable state
 ## Related Scripts
 - [ValidateParameter.ps1](ValidateParameter.md)
 
+- [InitTerraform.ps1](InitTerraform.md)
+
 - [DeployInfrastructure.ps1](DeployInfrastructure.md)
 
 - [DeployLUIS.ps1](DeployLUIS.md)

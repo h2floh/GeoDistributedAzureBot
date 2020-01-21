@@ -44,7 +44,7 @@ Write-WhoIAm
 
 # Load Values from Terraform Infrastructure run
 Write-Host "## 1. Load KeyVault values from Terraform Infrastructure run"
-$keyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$keyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
 
 # Set Default Values for Parameters
 $PFX_FILE_LOCATION = Set-DefaultIfEmpty -VALUE $PFX_FILE_LOCATION -DEFAULT "$(Get-ScriptPath)/../SSL/$($KeyVault.name).pfx"
@@ -58,7 +58,7 @@ if ($PFX_FILE_PASSWORD -ne "") {
 }
 
 if($? -eq $False) {
-    Write-Host -ForegroundColor -Red "### Error while importing PFX file, please check first if password is correct and file not corrupt..."
+    Write-Host -ForegroundColor Red "### Error while importing PFX file, please check first if password is correct and file not corrupt..."
     exit $False
 }
 

@@ -1,6 +1,7 @@
 st=>start: Start
 e=>end: End
 val=>operation: ValidateParameter.ps1:>ValidateParameter.md
+tfs=>operation: InitTerraform.ps1:>InitTerraform.md
 di=>operation: DeployInfrastructure.ps1:>DeployInfrastructure.md
 dl=>operation: DeployLUIS.ps1:>DeployLUIS.md
 db=>operation: DeployBot.ps1:>DeployBot.md
@@ -11,10 +12,14 @@ succ2=>condition: Success?
 succ3=>condition: Success?
 succ4=>condition: Success?
 succ5=>condition: Success?
+succ6=>condition: Success?
 
 st->val->succ1
-succ1(yes)->di
+succ1(yes)->tfs
 succ1(no)->e
+tfs->succ6
+succ6(yes)->di
+succ6(no)->e
 di->succ2
 succ2(yes)->dl
 succ2(no)->e
@@ -28,6 +33,7 @@ cis->succ5
 succ5(yes)->re
 succ5(no)->e
 re->e
+
 
 
 

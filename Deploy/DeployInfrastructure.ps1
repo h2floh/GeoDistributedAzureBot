@@ -57,9 +57,14 @@ Write-Host "## 1. Deploy Infrastructure with Terraform"
 $result = Set-RegionalVariableFile -FILENAME $azureBotRegions -BOT_REGIONS $BOT_REGIONS
 $success = $success -and $result
 
-terraform init "$(Get-ScriptPath)/$terraformFolder"
-terraform apply -var "bot_name=$BOT_NAME" -var "global_region=$BOT_GLOBAL_REGION" -var-file="$azureBotRegions" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
-$success = $success -and $?
+# Terraform Apply (If Init is needed execute InitTerraform.ps1 first)
+$inputvars = @(
+    "-var 'global_region=$BOT_GLOBAL_REGION'",
+    "-var 'bot_name=$BOT_NAME'",
+    "-var-file='$azureBotRegions'"
+)   
+Invoke-Terraform -TERRAFORM_FOLDER $terraformFolder -AUTOAPPROVE $AUTOAPPROVE -INPUTVARS $inputvars
+$success = $success -and $LASTEXITCODE
 
 # Clean Up
 Remove-Item -Path $azureBotRegions

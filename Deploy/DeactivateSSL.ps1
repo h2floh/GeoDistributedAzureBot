@@ -25,7 +25,6 @@ param(
 )
 # Helper var
 $success = $True
-$iaCFolder = "IaC"
 # Import Helper functions
 . "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 # Tell who you are (See HelperFunction.ps1)
@@ -33,7 +32,7 @@ Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$TrafficManager = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$TrafficManager = Get-TerraformOutput("trafficManager") | ConvertFrom-Json
 $success = $success -and $?
 
 # 2. Delete all TrafficManager endpoints

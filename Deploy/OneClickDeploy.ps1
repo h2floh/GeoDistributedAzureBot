@@ -78,6 +78,9 @@ param(
 )
 # Helper var
 $success = $True
+# only used for terraform remote store
+$storage_account_name = "$($BOT_NAME)tfs" 
+$resource_group_name = "rg-$BOT_NAME-tfstate" 
 # Import Helper functions
 . "$($MyInvocation.MyCommand.Path -replace($MyInvocation.MyCommand.Name))\HelperFunctions.ps1"
 # Tell who you are (See HelperFunctions.ps1)
@@ -88,9 +91,26 @@ $validationresult = & "$(Get-ScriptPath)\ValidateParameter.ps1" -BOT_NAME $BOT_N
 
 if ($validationresult)
 {
-    # Execute first Terraform to create the infrastructure
-    & "$(Get-ScriptPath)\DeployInfrastructure.ps1" -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
+    # Initialize Terraform Remote State Store
+    & "$(Get-ScriptPath)\InitTerraform.ps1" -STORAGE_ACCOUNT_NAME $storage_account_name -RESOURCE_GROUP_NAME $resource_group_name -LOCATION $BOT_GLOBAL_REGION
     $success = $success -and $LASTEXITCODE
+
+    # Execute first Terraform to create the infrastructure
+    if ($success)
+    {
+        & "$(Get-ScriptPath)\DeployInfrastructure.ps1" -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
+        $success = $success -and $LASTEXITCODE
+
+        # Store Terraform State Account info into KeyVault (for retrieval by OneClickDestroy)
+        if ($success)
+        {
+            $keyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
+            az keyvault secret set --vault-name $keyVault.name --name tfsaccountname --value $storage_account_name > $null
+            $success = $success -and $?
+            az keyvault secret set --vault-name $keyVault.name --name tfsrg --value $resource_group_name > $null
+            $success = $success -and $?
+        }
+    }
 
     # Execute LUIS Train & Deploy
     if ($success)

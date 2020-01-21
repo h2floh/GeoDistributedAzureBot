@@ -6,3 +6,4 @@ t2=>operation: Delete all TrafficManager endpoints
 st->t1->t2->e
 
 
+

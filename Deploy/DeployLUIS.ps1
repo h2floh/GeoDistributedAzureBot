@@ -54,7 +54,7 @@ $LUIS_APP_PACKAGE_LOCATION = Set-DefaultIfEmpty -VALUE $LUIS_APP_PACKAGE_LOCATIO
 
 # 1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)
 Write-Host "## 1. Get the authoring key from KeyVault (Azure CLI - Alternative: could be done with Terraform output)"
-$keyVault = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$keyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
 $LUISauthKey=$(az keyvault secret show --vault-name $keyVault.name --name $LUIS_KEYVAULT_KEY --query 'value' -o tsv)
 $success = $success -and $?
 
@@ -95,7 +95,7 @@ $success = $success -and $?
 
 # 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)
 Write-Host "## 7. Loads LUIS Account names and resource group names from Terraform output (Terraform CLI)"
-$LUISAccounts = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json luisAccounts | ConvertFrom-Json
+$LUISAccounts = Get-TerraformOutput("luisAccounts") | ConvertFrom-Json
 $success = $success -and $?
 
 # 8. Loops to associate every LUIS account with the LUIS application (cURL command)

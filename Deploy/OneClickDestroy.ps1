@@ -8,7 +8,9 @@ One Click Destroy for Geo Distributed Bot Solution
 This script will do following steps:
 
 1. Export Certificate to file [only if not in AUTOAPPROVE mode]
-2. Destroy rest of environment with Terraform
+2. Read Terraform State resources from KeyVault
+3. Destroy Bot environment with Terraform
+4. Destroy Terraform State resources
 
 After the script is successfully executed there should be nothing left
 
@@ -70,19 +72,47 @@ if ($AUTOAPPROVE -eq $False) {
     Write-Host -ForegroundColor Yellow "### WARNING, NO SSL EXPORT DUE TO ACTIVATED AUTOAPPROVE OPTION!!"
 }
 
-# 2. Destroy all infrastructure
-Write-Host "## 2. Destroy the infrastructure"
+# 2. Read Terraform State resources from KeyVault
+Write-Host "## 2. Read Terraform State resources from KeyVault"
+$keyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
+$tfsaccountname=$(az keyvault secret show --vault-name $keyVault.name --name tfsaccountname --query 'value' -o tsv)
+$tfsrg=$(az keyvault secret show --vault-name $keyVault.name --name tfsrg --query 'value' -o tsv)
+$success = $success -and $?
+
+# 3. Destroy all infrastructure
+Write-Host "## 3. Destroy the infrastructure"
 
 # Create Variable file for Terraform
 $result = Set-RegionalVariableFile -FILENAME $azureBotRegions -BOT_REGIONS $BOT_REGIONS
 $success = $success -and $result
 
-terraform init "$(Get-ScriptPath)/$terraformFolder"
-terraform destroy -var "bot_name=$BOT_NAME" -var "global_region=$BOT_GLOBAL_REGION" -var-file="$azureBotRegions" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
-$success = $success -and $?
+# Terraform Destroy (If Init is needed execute InitTerraform.ps1 first)
+$inputvars = @(
+    "-var 'bot_name=$BOT_NAME'", 
+    "-var 'global_region=$BOT_GLOBAL_REGION'",
+    "-var-file='$azureBotRegions'"
+)   
+Invoke-Terraform -ACTION "destroy" -TERRAFORM_FOLDER $terraformFolder -AUTOAPPROVE $AUTOAPPROVE -INPUTVARS $inputvars
+$success = $success -and $LASTEXITCODE
 
 # Clean Up
 Remove-Item -Path $azureBotRegions 
+
+# 4. Destroy Terraform State resources
+if ($success)
+{
+    Write-Host "## 4. Destroy Terraform State resources"
+    $azapprove = ""
+    if ($AUTOAPPROVE -eq $True) {
+        Write-Host -ForegroundColor Yellow "### WARNING, TERRAFORM STATE WILL BE DESTROYED DUE TO ACTIVATED AUTOAPPROVE OPTION!!"
+        $azapprove = "--yes" 
+    } 
+    # Delete Storage Account and Resource Group
+    az storage account delete --name $tfsaccountname $azapprove
+    $success = $success -and $?
+    az group delete --name $tfsrg $azapprove
+    $success = $success -and $?
+}
 
 # Return execution status
 Write-ExecutionStatus -success $success

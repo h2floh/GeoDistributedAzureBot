@@ -43,3 +43,6 @@ The service principal will need following IAM roles on the subscription level:
 
 - Contributor
 - Key Vault Contributor
+- User Access Administrator
+
+> :information_source: Since this is almost equivalent to 'Owner' role. If you want to have more fine grained control you have to setup the Terraform State store separately and remove the role assignment part in `InitTerraform.ps1`.

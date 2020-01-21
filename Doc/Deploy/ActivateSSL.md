@@ -30,6 +30,10 @@ After the script is successfully executed the bot should be in a usable state fr
 ```
 
 
+## Related Scripts
+- [InitTerraform.ps1](InitTerraform.md)
+
+
 ## Flowchart
 
 <div align='center'>

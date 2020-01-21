@@ -5,6 +5,8 @@ provider "azurerm" {
 }
 
 terraform {
-  //backend "azurerm" {
-  //}
+  backend "azurerm" {
+    container_name       = "tfstate"
+    key                  = "sslactivation.terraform.tfstate"
+  }
 }

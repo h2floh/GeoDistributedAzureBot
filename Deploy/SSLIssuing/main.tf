@@ -9,6 +9,8 @@ provider "random" {
 }
 
 terraform {
-  //backend "azurerm" {
-  //}
+  backend "azurerm" {
+    container_name       = "tfstate"
+    key                  = "sslissuing.terraform.tfstate"
+  }
 }

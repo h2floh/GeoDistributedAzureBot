@@ -57,7 +57,6 @@ $loopcount = 0
 $waitretrysec = 10
 $loopmax = (60 * $MAX_WAIT_TIME_MIN ) / $waitretrysec
 $terraformFolder = "SSLIssuing"
-$iaCFolder = "IaC"
 $PRODUCTION = 1
 if ($LETS_ENCRYPT_STAGING) {
     $PRODUCTION = 0
@@ -70,9 +69,9 @@ Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$KeyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$KeyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
 $success = $success -and $?
-$TrafficManager = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$TrafficManager = Get-TerraformOutput("trafficManager") | ConvertFrom-Json
 $success = $success -and $?
 
 # 2. If custom domain is set, check if it points to TrafficManager DNS entry
@@ -111,16 +110,21 @@ elseif ($YOUR_DOMAIN -ne $TrafficManager.fqdn) {
 # 3. Apply Terraform for SSLIssuing
 Write-Host "## 3. Apply Terraform for SSLIssuing"
 
-# Terraform Init
-terraform init "$(Get-ScriptPath)/$terraformFolder"
-# Terraform Apply
-terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
--var "your_certificate_email=$YOUR_CERTIFICATE_EMAIL"  -var "your_domain=$YOUR_DOMAIN" `
--var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
--var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
--var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
--var "production=$PRODUCTION" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
-$success = $success -and $?
+# Terraform Apply (If Init is needed execute InitTerraform.ps1 first)
+$inputvars = @(
+    "-var 'keyVault_name=$($KeyVault.name)'",
+    "-var 'keyVault_rg=$($KeyVault.resource_group)'",
+    "-var 'your_certificate_email=$YOUR_CERTIFICATE_EMAIL'",
+    "-var 'your_domain=$YOUR_DOMAIN'",
+    "-var 'trafficmanager_name=$($TrafficManager.name)'",
+    "-var 'trafficmanager_rg=$($TrafficManager.resource_group)'",
+    "-var 'aci_rg=$($KeyVault.resource_group)'",
+    "-var 'aci_location=$($KeyVault.location)'",
+    "-var 'keyVault_cert_name=$KEYVAULT_CERT_NAME'",
+    "-var 'production=$PRODUCTION'"
+)   
+Invoke-Terraform -TERRAFORM_FOLDER $terraformFolder -AUTOAPPROVE $AUTOAPPROVE -INPUTVARS $inputvars
+$success = $success -and $LASTEXITCODE
 
 # 4. Check for creation of certificate
 Write-Host "## 4. Check for availability of certificate"
@@ -139,16 +143,9 @@ Write-Host "## Certificate found!"
 # 5. Destroy Terraform SSLIssuing
 Write-Host "## 5. Destroy unneccessary infrastructure again"
 
-# Terraform Init (should not be needed)
-terraform init "$(Get-ScriptPath)/$terraformFolder"
-# Terraform Destroy
-terraform destroy -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
--var "your_certificate_email=$YOUR_CERTIFICATE_EMAIL"  -var "your_domain=$YOUR_DOMAIN" `
--var "trafficmanager_name=$($TrafficManager.name)"  -var "trafficmanager_rg=$($TrafficManager.resource_group)" `
--var "aci_rg=$($KeyVault.resource_group)"  -var "aci_location=$($KeyVault.location)" `
--var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
--var "production=$PRODUCTION" -state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
-$success = $success -and $?
+# Terraform Destroy (If Init is needed execute InitTerraform.ps1 first)
+Invoke-Terraform -ACTION "destroy" -TERRAFORM_FOLDER $terraformFolder -AUTOAPPROVE $AUTOAPPROVE -INPUTVARS $inputvars
+$success = $success -and $LASTEXITCODE
 
 # Return execution status
 Write-ExecutionStatus -success $success

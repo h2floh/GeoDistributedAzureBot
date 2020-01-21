@@ -126,9 +126,6 @@ resource "azurerm_cognitive_account" "LUISRegion" {
   resource_group_name = azurerm_resource_group.Region[each.key].name
   kind                = "LUIS"
 
-  sku {
-    name = "S0"
-    tier = "Standard"
-  }
+  sku_name = "S0"
 }
 

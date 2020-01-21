@@ -76,7 +76,7 @@ $success = $success -and $?
 
 # 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)
 Write-Host "## 3. Loads WebApp Account names and resource group names from Terraform output (Terraform CLI)"
-$WebAppAccounts = terraform output -state="$(Get-ScriptPath)/IaC/terraform.tfstate" -json webAppAccounts | ConvertFrom-Json
+$WebAppAccounts = Get-TerraformOutput("webAppAccounts") | ConvertFrom-Json
 $success = $success -and $?
 
 # 4. Deploy to WebApps

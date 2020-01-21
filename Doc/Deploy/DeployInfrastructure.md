@@ -30,6 +30,10 @@ a SSL certificate and activation of TrafficManager
 ```
 
 
+## Related Scripts
+- [InitTerraform.ps1](InitTerraform.md)
+
+
 ## Flowchart
 
 <div align='center'>

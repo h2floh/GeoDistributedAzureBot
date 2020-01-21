@@ -41,7 +41,6 @@ param(
 # Helper var
 $success = $True
 $terraformFolder = "SSLActivation"
-$iaCFolder = "IaC"
 $webAppsVariableFile = "$(Get-ScriptPath)/$terraformFolder/webAppVariable.tfvars.json"
 
 # Tell who you are (See HelperFunction.ps1)
@@ -49,13 +48,13 @@ Write-WhoIAm
 
 # 1. Read values from Terraform IaC run (Bot deployment scripts)
 Write-Host "## 1. Read values from Terraform IaC run (Bot deployment scripts)"
-$content = '{ "azure_webApps" : ' + $(terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json webAppAccounts) + '}'
+$content = '{ "azure_webApps" : ' + $(Get-TerraformOutput("webAppAccounts")) + '}'
 $success = $success -and $?
-$KeyVault = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json keyVault | ConvertFrom-Json
+$KeyVault = Get-TerraformOutput("keyVault") | ConvertFrom-Json
 $success = $success -and $?
-$TrafficManager = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json trafficManager | ConvertFrom-Json
+$TrafficManager = Get-TerraformOutput("trafficManager") | ConvertFrom-Json
 $success = $success -and $?
-$Bot = terraform output -state="$(Get-ScriptPath)/$iaCFolder/terraform.tfstate" -json bot | ConvertFrom-Json
+$Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
 $success = $success -and $?
 
 # Set Variable File for webApps
@@ -69,15 +68,18 @@ if ($YOUR_DOMAIN -eq "")
     $YOUR_DOMAIN = $TrafficManager.fqdn
 }
 
-# Terraform init
-terraform init "$(Get-ScriptPath)/$terraformFolder"
-# Terraform apply
-terraform apply -var "keyVault_name=$($KeyVault.name)" -var "keyVault_rg=$($KeyVault.resource_group)" `
--var "your_domain=$YOUR_DOMAIN" -var "trafficmanager_name=$($TrafficManager.name)" `
--var "trafficmanager_rg=$($TrafficManager.resource_group)" `
--var-file="$webAppsVariableFile" -var "keyVault_cert_name=$KEYVAULT_CERT_NAME" `
--state="$(Get-ScriptPath)/$terraformFolder/terraform.tfstate" $(Get-TerraformAutoApproveFlag $AUTOAPPROVE) "$(Get-ScriptPathTerraformApply)/$terraformFolder"
-$success = $success -and $?
+# Terraform Apply (If Init is needed execute InitTerraform.ps1 first)
+$inputvars = @(
+    "-var 'keyVault_name=$($KeyVault.name)'",
+    "-var 'keyVault_rg=$($KeyVault.resource_group)'",
+    "-var 'your_domain=$YOUR_DOMAIN'",
+    "-var 'trafficmanager_name=$($TrafficManager.name)'",
+    "-var 'trafficmanager_rg=$($TrafficManager.resource_group)'",
+    "-var 'keyVault_cert_name=$KEYVAULT_CERT_NAME'",
+    "-var-file='$webAppsVariableFile'"
+)   
+Invoke-Terraform -TERRAFORM_FOLDER $terraformFolder -AUTOAPPROVE $AUTOAPPROVE -INPUTVARS $inputvars
+$success = $success -and $LASTEXITCODE
 
 # CleanUp
 Remove-Item -Path "$webAppsVariableFile"

@@ -188,7 +188,7 @@ Listing up various things from different domain/view angles:
 - Include prerequisite validation check
 - Change from LUIS CLI to API calls in order to overcome Azure Shell restriction on npm executable packages
 - Create additional documentation for all scripts and their options / deployment flow
-- Update scripts and Terraform to use remote state store based on Blob Storage
+~~- Update scripts and Terraform to use remote state store based on Blob Storage~~
 - Extend Bot with Geo distributed Speech service
 - Include scripts to simulate different type of failures
 - Create a containerized version where AppService will be replaced with Azure Kubernetes Service or Azure Container Instances
