@@ -1,0 +1,39 @@
+parameters:
+  sslfilename: ''
+
+steps:
+
+# The file names sslcert.pfx has to be provided as a secure file in Azure DevOps
+# Due to limitations in this task we have to provide the filename via parameter in starting pipeline, not possible to do it via variables
+# because this task runs as a pre task before the variables are loaded
+- task: DownloadSecureFile@1
+  name: sslCertificate
+  displayName: 'Download SSL certificate for Staging Environment'
+  inputs:
+    secureFile: ${{ parameters.sslfilename }}
+
+# Preperation Phase
+- template: prep.yaml  
+  parameters:
+    terraformfolders: '@("IaC", "SSLActivation")'
+
+- pwsh: |
+    # Deploy the main infrastructure
+    
+    Deploy/DeployInfrastructure.ps1 -BOT_NAME $(BotName) -BOT_REGIONS $(BotRegions) -BOT_GLOBAL_REGION $(BotGlobalLocation) -AUTOAPPROVE $True
+
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+  displayName: 'Update Main Infrastructure'
+
+- pwsh: |
+    # Import SSL Certificate
+    
+    Deploy/CreateOrImportSSL.ps1 -YOUR_DOMAIN $(Domain) -PFX_FILE_LOCATION $(sslCertificate.secureFilePath) -PFX_FILE_PASSWORD $(PFXImportPassword) -AUTOAPPROVE $True -RERUN $True -FORCE $True
+
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+  displayName: 'Import SSL Certificate'
+
+# Logout
+- template: logout.yaml  

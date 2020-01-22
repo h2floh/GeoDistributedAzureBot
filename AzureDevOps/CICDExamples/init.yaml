@@ -1,0 +1,36 @@
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# CI trigger
+trigger: none
+#   branches:
+#     include:
+#     - master
+#   paths:
+#     include:
+#     - Deploy
+#     - GeoBot/GeoBot
+#     - AzureDevOps/CICDExamples/multistage.yaml
+
+# PR builds
+# pr:
+#   branches:
+#     include:
+#     - master
+#   paths:
+#     include:
+#     - Deploy
+#     - AzureDevOps/CICDExamples/multistage.yaml
+
+stages:
+- template: stages/endtoend.yaml  # Template reference
+  parameters:
+    environment: Stage
+    sslfilename: 'sslcertstage.pfx'
+
+- template: stages/endtoend.yaml  # Template reference
+  parameters:
+    environment: Prod
+    sslfilename: 'sslcert.pfx'

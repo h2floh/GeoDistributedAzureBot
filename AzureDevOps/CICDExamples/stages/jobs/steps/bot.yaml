@@ -1,0 +1,18 @@
+steps:
+
+# Preperation Phase
+- template: prep.yaml  
+  parameters:
+    terraformfolders: '@("IaC")'
+
+- pwsh: |
+    # Deploy / Update Bot App 
+    
+    Deploy/DeployBot.ps1
+
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+  displayName: 'Deploy Bot Application'
+  
+# Logout
+- template: logout.yaml  

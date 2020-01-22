@@ -1,0 +1,78 @@
+parameters:
+  environment: ''
+
+stages:
+
+- stage: endtoend${{ parameters.environment }}
+  displayName: '${{ parameters.environment }} updating environment end-to-end' 
+  variables:
+  # This group must include following variables: 
+  # - ServicePrincipalID (Client/App ID)
+  # - ServicePrincipalSecret (Client Secret)
+  # - TenantId (AAD Id)
+  # - SubscriptionId (Azure Subscription)
+  - group: SubscriptionDetails
+  # This group must include following variables: 
+  # - TFStateRG (Resource Group for Terraform state)
+  # - TFStateStA (Terraform state store storage account)
+  # - TFStateLoc (Terraform state store storage account and resource group location)
+  - group: StateStore${{ parameters.environment }}
+  # This group must include following variables: 
+  # - BotName (Name of the Bot)
+  # - Domain (Custom Domain name for the Bot)
+  # - BotRegions (Azure Regions for the Bot PowerShell Array format)
+  # - BotGlobalLocation (Azure Regions for global resources)
+  # - PFXImportPassword (PFX file import password for SSL Bot Certificate)
+  - group: BotConfig${{ parameters.environment }}
+
+  jobs:
+  - deployment: IaC
+    displayName: 'Updating Infrastructure ${{ parameters.environment }}'
+    pool:
+      name: Default
+      demands:
+      - docker
+    container: geobotagent
+
+    environment: ${{ parameters.environment }}
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - template: jobs/steps/iac.yaml  # Template reference
+            parameters:
+              sslfilename: '${{ parameters.sslfilename }}'
+
+  - deployment: LUIS
+    displayName: 'Deploying LUIS ${{ parameters.environment }}'
+    pool:
+      name: Default
+      demands:
+      - docker
+    dependsOn: IaC
+    container: geobotagent
+    environment: ${{ parameters.environment }}
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - template: jobs/steps/luis.yaml  # Template reference
+            parameters:
+              environment: ${{ parameters.environment }}
+
+  - deployment: BOT
+    displayName: 'Deploying Bot .NET Core to ${{ parameters.environment }}'
+    pool:
+      name: Default
+      demands:
+      - docker
+    dependsOn: LUIS
+    container: geobotagent
+    environment: ${{ parameters.environment }}
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - template: jobs/steps/bot.yaml  # Template reference
+            parameters:
+              environment: ${{ parameters.environment }}

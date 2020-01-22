@@ -1,0 +1,24 @@
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# CI trigger
+trigger: none
+
+stages:
+- stage: DestroyStage
+  displayName: 'Destroy Staging Environment'
+  dependsOn: []
+  jobs:
+  - template: stages/jobs/destroy.yaml  # Template reference
+    parameters:
+      environment: Stage
+
+- stage: DestroyProd
+  displayName: 'Destroy Production Environment'
+  dependsOn: DestroyStage
+  jobs:
+  - template: stages/jobs/destroy.yaml  # Template reference
+    parameters:
+      environment: Prod
