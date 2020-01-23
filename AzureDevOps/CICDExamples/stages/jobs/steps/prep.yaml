@@ -1,0 +1,30 @@
+### This is a template, can not be used as a root pipeline
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+parameters:
+  terraformfolders: ''
+
+steps:
+# Checkout Repo
+- checkout: self
+# Login to Azure CLI and prepare environment-variables needed by Terraform AzureRM service principal login
+- pwsh: |
+    # Azure Login
+    az login --service-principal --username $(ServicePrincipalID) --password $(ServicePrincipalSecret) --tenant $(TenantId)
+    
+    # Terraform
+    Write-Host "##vso[task.setvariable variable=ARM_CLIENT_ID]$(ServicePrincipalID)"
+    Write-Host "##vso[task.setvariable variable=ARM_CLIENT_SECRET]$(ServicePrincipalSecret)"
+    Write-Host "##vso[task.setvariable variable=ARM_SUBSCRIPTION_ID]$(SubscriptionId)"
+    Write-Host "##vso[task.setvariable variable=ARM_TENANT_ID]$(TenantId)"
+  displayName: 'Prepare Azure connection for CLI & Terraform'  
+
+# Initialize all needed Terraform Folders (Parameterized) e.g. @("IaC")
+- pwsh: |
+    # Initialize Terraform Folders
+    
+    Deploy/InitTerraform.ps1 -STORAGE_ACCOUNT_NAME $(TFStateStA) -RESOURCE_GROUP_NAME $(TFStateRG) -LOCATION $(TFStateLoc) -TERRAFORM_FOLDERS ${{ parameters.terraformfolders }}
+    
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+  displayName: 'Init Terraform Folder'

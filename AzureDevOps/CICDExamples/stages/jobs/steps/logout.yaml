@@ -1,0 +1,18 @@
+### This is a template, can not be used as a root pipeline
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+steps:
+# Logout of AzureCLI and overwrite env variable with account information
+- pwsh: |
+    # Az logout
+    az logout
+    
+    # Clear ENV Variables
+    # Terraform
+    $env:ARM_CLIENT_ID=""
+    $env:ARM_CLIENT_SECRET=""
+    $env:ARM_SUBSCRIPTION_ID=""
+    $env:ARM_TENANT_ID=""
+  failOnStderr: true
+  displayName: 'Az Logout'
+  condition: always()

@@ -1,0 +1,21 @@
+### This is a template, can not be used as a root pipeline
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+steps:
+
+# Preperation Phase
+- template: prep.yaml  
+  parameters:
+    terraformfolders: '@("IaC")'
+
+- pwsh: |
+    # Deploy / Update LUIS App 
+    
+    Deploy/DeployLUIS.ps1
+
+    # $Lastexitcode $True -> Success, we have to change it to 0
+    exit -not $LASTEXITCODE
+  displayName: 'Deploy / Update LUIS App'
+
+# Logout
+- template: logout.yaml  

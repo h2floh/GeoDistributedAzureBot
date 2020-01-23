@@ -1,0 +1,66 @@
+### This is a template, can not be used as a root pipeline
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+parameters:
+  environment: ''
+
+jobs:
+- deployment: Destroy
+  displayName: 'Destroy Infrastructure ${{ parameters.environment }}'
+  pool:
+    name: Default
+    demands:
+    - docker
+  container: geobotagent
+  variables:
+  # This group must include following variables: 
+  # - ServicePrincipalID (Client/App ID)
+  # - ServicePrincipalSecret (Client Secret)
+  # - TenantId (AAD Id)
+  # - SubscriptionId (Azure Subscription)
+  - group: SubscriptionDetails
+  # This group must include following variables: 
+  # - TFStateRG (Resource Group for Terraform state)
+  # - TFStateStA (Terraform state store storage account)
+  # - TFStateLoc (Terraform state store storage account and resource group location)
+  - group: StateStore${{ parameters.environment }}
+  # This group must include following variables: 
+  # - BotName (Name of the Bot)
+  # - Domain (Custom Domain name for the Bot)
+  # - BotRegions (Azure Regions for the Bot PowerShell Array format)
+  # - BotGlobalLocation (Azure Regions for global resources)
+  # - PFXImportPassword (PFX file import password for SSL Bot Certificate)
+  - group: BotConfig${{ parameters.environment }}
+  environment: ${{ parameters.environment }}
+  strategy: 
+    runOnce:
+      deploy:
+        steps:
+        # Preperation Phase
+        - template: steps/prep.yaml  
+          parameters:
+            terraformfolders: '@("IaC")'
+
+        - pwsh: |
+            # Workaround in order to use OneClickDestroy
+            # 1. Read out KeyVault, 2. save TerraformStateStore info to KeyVault 
+            
+            cd Deploy/IaC
+            $keyvault = terraform output -json keyVault | ConvertFrom-Json
+
+            az keyvault secret set --vault-name $keyVault.name --name tfsaccountname --value $(TFStateStA) > $null
+            az keyvault secret set --vault-name $keyVault.name --name tfsrg --value $(TFStateRG) > $null
+            
+          displayName: 'Prepare data for OneClickDestroy'
+
+        - pwsh: |
+            # Delete State Store and Infrastructure
+            
+            Deploy/OneClickDestroy.ps1 -BOT_NAME $(BotName) -BOT_REGIONS $(BotRegions) -BOT_GLOBAL_REGION $(BotGlobalLocation) -AUTOAPPROVE $True
+
+            # $Lastexitcode $True -> Success, we have to change it to 0
+            exit -not $LASTEXITCODE
+          displayName: 'Delete Everything'
+
+        # Logout
+        - template: steps/logout.yaml  

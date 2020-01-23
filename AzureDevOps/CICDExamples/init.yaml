@@ -1,0 +1,55 @@
+### INITIAL END-TO-END ENVIRONMENT CREATION
+### 
+### This pipeline is for an initial end to end deployment of
+### Staging (Environment: Stage) and Production (Environment: Prod)
+### can also be used to reinitialize a environment
+###
+### Has to be started manually, no triggers are set up
+###
+### Following Variable Groups have to be in place:
+### 
+###  SubscriptionDetails: 
+###  - ServicePrincipalID (Client/App ID)
+###  - ServicePrincipalSecret (Client Secret)
+###  - TenantId (AAD Id)
+###  - SubscriptionId (Azure Subscription)
+###
+###  StateStoreStage & StateStoreProd: 
+###  - TFStateRG (Resource Group for Terraform state)
+###  - TFStateStA (Terraform state store storage account)
+###  - TFStateLoc (Terraform state store storage account and resource group location)
+###
+###  BotConfigStage & BotConfigProd: 
+###  - BotName (Name of the Bot)
+###  - Domain (Custom Domain name for the Bot)
+###  - BotRegions (Azure Regions for the Bot PowerShell Array format)
+###  - BotGlobalLocation (Azure Regions for global resources)
+###  - PFXImportPassword (PFX file import password for SSL Bot Certificate)
+### 
+### Following Secure Files have to be in place:
+###
+### - sslcertstage.pfx (SSL for domain used in Staging)
+### - sslcert.pfx      (SSL for domain used in Production)
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# CI trigger
+trigger: none
+
+# No PR trigger
+pr: none
+
+stages:
+- template: stages/endtoend.yaml  # Template reference
+  parameters:
+    environment: Stage
+    sslfilename: 'sslcertstage.pfx'
+
+- template: stages/endtoend.yaml  # Template reference
+  parameters:
+    environment: Prod
+    sslfilename: 'sslcert.pfx'

@@ -1,0 +1,40 @@
+### This is a template, can not be used as a root pipeline
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+parameters:
+  environment: ''
+
+stages:
+
+- stage: BOT${{ parameters.environment }}
+  displayName: '${{ parameters.environment }} updating Bot' 
+  condition: or(eq('${{ parameters.environment }}', 'Stage'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  variables:
+  # This group must include following variables: 
+  # - ServicePrincipalID (Client/App ID)
+  # - ServicePrincipalSecret (Client Secret)
+  # - TenantId (AAD Id)
+  # - SubscriptionId (Azure Subscription)
+  - group: SubscriptionDetails
+  # This group must include following variables: 
+  # - TFStateRG (Resource Group for Terraform state)
+  # - TFStateStA (Terraform state store storage account)
+  # - TFStateLoc (Terraform state store storage account and resource group location)
+  - group: StateStore${{ parameters.environment }}
+
+  jobs:
+  - deployment: BOT
+    displayName: 'Deploying Bot .NET Core to ${{ parameters.environment }}'
+    pool:
+      name: Default
+      demands:
+      - docker
+    container: geobotagent
+    environment: ${{ parameters.environment }}
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - template: jobs/steps/bot.yaml  # Template reference
+            parameters:
+              environment: ${{ parameters.environment }}

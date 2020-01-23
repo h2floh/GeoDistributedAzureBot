@@ -1,0 +1,54 @@
+### LUIS NLP Continuous Integration and Deployment
+### 
+### This pipeline will run:
+### - on PR on master within GeoBot/GeoBot/CognitiveModels (LUIS configuration), but will only train and publish LUIS changes to Stage
+### - on CI on master within GeoBot/GeoBot/CognitiveModels (LUIS configuration), will train and publish LUIS changes to Stage and then on Prod
+###
+### To introduce manual intervention before deploying to Stage and or Prod environment see here:
+### https://docs.microsoft.com/en-us/azure/devops/pipelines/process/approvals?view=azure-devops&tabs=check-pass
+###
+### Following Variable Groups have to be in place:
+### 
+###  SubscriptionDetails: 
+###  - ServicePrincipalID (Client/App ID)
+###  - ServicePrincipalSecret (Client Secret)
+###  - TenantId (AAD Id)
+###  - SubscriptionId (Azure Subscription)
+###
+###  StateStoreStage & StateStoreProd: 
+###  - TFStateRG (Resource Group for Terraform state)
+###  - TFStateStA (Terraform state store storage account)
+###  - TFStateLoc (Terraform state store storage account and resource group location)
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# CI trigger
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - GeoBot/GeoBot/CognitiveModels
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - GeoBot/GeoBot/CognitiveModels
+
+stages:
+- template: stages/luis.yaml  # Template reference
+  parameters:
+    environment: Stage
+
+- template: stages/luis.yaml  # Template reference
+  parameters:
+    environment: Prod

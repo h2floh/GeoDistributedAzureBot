@@ -1,0 +1,56 @@
+### DESTROY THE STAGING AND PRODUCTION ENVIRONMENT 
+### 
+### This pipeline is to clean up fully the
+### Staging (Environment: Stage) and Production (Environment: Prod)
+### 
+###
+### Has to be started manually, no triggers are set up
+###
+### Following Variable Groups have to be in place:
+### 
+###  SubscriptionDetails: 
+###  - ServicePrincipalID (Client/App ID)
+###  - ServicePrincipalSecret (Client Secret)
+###  - TenantId (AAD Id)
+###  - SubscriptionId (Azure Subscription)
+###
+###  StateStoreStage & StateStoreProd: 
+###  - TFStateRG (Resource Group for Terraform state)
+###  - TFStateStA (Terraform state store storage account)
+###  - TFStateLoc (Terraform state store storage account and resource group location)
+###
+###  BotConfigStage & BotConfigProd: 
+###  - BotName (Name of the Bot)
+###  - Domain (Custom Domain name for the Bot)
+###  - BotRegions (Azure Regions for the Bot PowerShell Array format)
+###  - BotGlobalLocation (Azure Regions for global resources)
+###  - PFXImportPassword (PFX file import password for SSL Bot Certificate)
+###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# No CI trigger
+trigger: none
+
+# No PR trigger
+pr: none
+
+stages:
+- stage: DestroyStage
+  displayName: 'Destroy Staging Environment'
+  dependsOn: []
+  jobs:
+  - template: stages/jobs/destroy.yaml  # Template reference
+    parameters:
+      environment: Stage
+
+- stage: DestroyProd
+  displayName: 'Destroy Production Environment'
+  dependsOn: DestroyStage
+  jobs:
+  - template: stages/jobs/destroy.yaml  # Template reference
+    parameters:
+      environment: Prod
