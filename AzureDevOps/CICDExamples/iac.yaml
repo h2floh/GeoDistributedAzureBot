@@ -1,10 +1,11 @@
-### INITIAL END-TO-END ENVIRONMENT CREATION
+### INFRASTRUCTURE Continuous Deployment
 ### 
-### This pipeline is for an initial end to end deployment of
-### Staging (Environment: Stage) and Production (Environment: Prod)
-### can also be used to reinitialize a environment
+### This pipeline will run:
+### - on PR on master within Deploy/IaC (Terraform configuration), but will only deploy infrastructure changes to Stage
+### - on CI on master within Deploy/IaC (Terraform configuration), will reapply infrastructure changes to Stage and then on Prod
 ###
-### Has to be started manually, no triggers are set up
+### To introduce manual intervention before deploying to Stage and or Prod environment see here:
+### https://docs.microsoft.com/en-us/azure/devops/pipelines/process/approvals?view=azure-devops&tabs=check-pass
 ###
 ### Following Variable Groups have to be in place:
 ### 
@@ -38,18 +39,30 @@ resources:
     image: h2floh/geobotagent
 
 # CI trigger
-trigger: none
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - Deploy/IaC
 
-# No PR trigger
-pr: none
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - Deploy/IaC
 
 stages:
-- template: stages/endtoend.yaml  # Template reference
+- template: stages/iac.yaml  # Template reference
   parameters:
     environment: Stage
     sslfilename: 'sslcertstage.pfx'
 
-- template: stages/endtoend.yaml  # Template reference
+- template: stages/iac.yaml  # Template reference
   parameters:
     environment: Prod
     sslfilename: 'sslcert.pfx'

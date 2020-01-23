@@ -6,8 +6,9 @@ parameters:
 
 stages:
 
-- stage: endtoend${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} updating environment end-to-end' 
+- stage: IaC${{ parameters.environment }}
+  displayName: '${{ parameters.environment }} updating Infrastructure' 
+  condition: or(eq('${{ parameters.environment }}', 'Stage'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   variables:
   # This group must include following variables: 
   # - ServicePrincipalID (Client/App ID)
@@ -31,6 +32,7 @@ stages:
   jobs:
   - deployment: IaC
     displayName: 'Updating Infrastructure ${{ parameters.environment }}'
+    
     pool:
       name: Default
       demands:
@@ -45,37 +47,3 @@ stages:
           - template: jobs/steps/iac.yaml  # Template reference
             parameters:
               sslfilename: '${{ parameters.sslfilename }}'
-
-  - deployment: LUIS
-    displayName: 'Deploying LUIS ${{ parameters.environment }}'
-    pool:
-      name: Default
-      demands:
-      - docker
-    dependsOn: IaC
-    container: geobotagent
-    environment: ${{ parameters.environment }}
-    strategy: 
-      runOnce:
-        deploy:
-          steps:
-          - template: jobs/steps/luis.yaml  # Template reference
-            parameters:
-              environment: ${{ parameters.environment }}
-
-  - deployment: BOT
-    displayName: 'Deploying Bot .NET Core to ${{ parameters.environment }}'
-    pool:
-      name: Default
-      demands:
-      - docker
-    dependsOn: LUIS
-    container: geobotagent
-    environment: ${{ parameters.environment }}
-    strategy: 
-      runOnce:
-        deploy:
-          steps:
-          - template: jobs/steps/bot.yaml  # Template reference
-            parameters:
-              environment: ${{ parameters.environment }}
