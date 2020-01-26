@@ -42,7 +42,7 @@ Write-Host "## 2. Retrive DirectlineKey and register it to KV"
 $directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
 $success = $success -and $?
 # convert the value of DirectlineKey to a secure string
-$secretvalue = ConvertTo-SecureString $(directline.properties.properties.sites.key) -AsPlainText -Force
+$secretvalue = ConvertTo-SecureString $directline.properties.properties.sites.key -AsPlainText -Force
 # create a secret in Key Vault called DirectlineKey
 $secret = Set-AzKeyVaultSecret -VaultName $Bot.name -Name 'DirectlineKey' -SecretValue $secretvalue
 
