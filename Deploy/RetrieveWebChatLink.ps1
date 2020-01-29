@@ -49,7 +49,6 @@ $secret = Set-AzKeyVaultSecret -VaultName $Bot.name -Name 'DirectlineKey' -Secre
 # 3. Display Bot Name, Endpoint and generate Link
 Write-Host "## 3. Display Bot Name, Endpoint and generate Link"
 $endpoint = "https://$($Bot.name).trafficmanager.net"
-$directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
 $success = $success -and $?
 $queryparams = "?bot=$($Bot.name)&endpoint=$($endpoint)"
 $webchathtmlfile = Get-ItemProperty -Path "$(Get-ScriptPath)/../WebChat/index.html"
