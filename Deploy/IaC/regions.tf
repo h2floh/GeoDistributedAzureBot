@@ -129,3 +129,44 @@ resource "azurerm_cognitive_account" "LUISRegion" {
   sku_name = "S0"
 }
 
+// For every region add the Speech KEY to KeyVault
+resource "azurerm_key_vault_secret" "SpeechKeyRegion" {
+  for_each = local.azure_bot_regions
+
+  name         = "SpeechAPIKey${each.key}"
+  value        = azurerm_cognitive_account.SpeechRegion[each.key].primary_access_key
+  key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
+}
+
+// For every region add the Speech endpoint URL to KeyVault
+resource "azurerm_key_vault_secret" "SpeechEndpointRegion" {
+  for_each = local.azure_bot_regions
+
+  name         = "SpeechAPIHostName${each.key}"
+  value        = azurerm_cognitive_account.SpeechRegion[each.key].endpoint
+  key_vault_id = azurerm_key_vault.GeoBot.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.currentClient
+  ]
+}
+
+// Create a Speech Endpoint/Key for every Region
+resource "azurerm_cognitive_account" "SpeechRegion" {
+  for_each = local.azure_bot_regions
+
+  name                = "${var.bot_name}Speech${each.key}"
+  location            = azurerm_resource_group.Region[each.key].location
+  resource_group_name = azurerm_resource_group.Region[each.key].name
+  kind                = "SpeechServices"
+
+  sku {
+    name = "S0"
+    tier = "Standard"
+  }
+}
+

@@ -32,22 +32,31 @@ $success = $True
 # Tell who you are (See HelperFunction.ps1)
 Write-WhoIAm
 
-# 1. Export SSL Certificate
+# 1. Retrieve Bot Data from Terraform infrastructure execution
 Write-Host "## 1. Retrieve Bot Data from Terraform infrastructure execution"
 $Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
 $success = $success -and $?
 
-# 2. Retrieve DirectLine Secret and generate Link
-Write-Host "## 2. Retrieve DirectLine Secret and generate Link"
+# 2. Retrive DirectlineKey and register it to KV
+Write-Host "## 2. Retrive DirectlineKey and register it to KV"
 $directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
 $success = $success -and $?
-$queryparams = "?bot=$($Bot.name)&key=$($directline.properties.properties.sites.key)"
+# convert the value of DirectlineKey to a secure string
+$secretvalue = ConvertTo-SecureString $directline.properties.properties.sites.key -AsPlainText -Force
+# create a secret in Key Vault called DirectlineKey
+$secret = Set-AzKeyVaultSecret -VaultName $Bot.name -Name 'DirectlineKey' -SecretValue $secretvalue
+
+# 3. Display Bot Name, Endpoint and generate Link
+Write-Host "## 3. Display Bot Name, Endpoint and generate Link"
+$endpoint = "https://$($Bot.name).trafficmanager.net"
+$directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
+$success = $success -and $?
+$queryparams = "?bot=$($Bot.name)&endpoint=$($endpoint)"
 $webchathtmlfile = Get-ItemProperty -Path "$(Get-ScriptPath)/../WebChat/index.html"
 
 Write-Host -ForegroundColor Green "`n`n### If you were lucky and there were no errors in between your Geo Distributed Bot is ready!`n### If you are just testing you can use this link to open a WebChat to your Bot from any browser.`n### E.g. if you want to test it from different VM's or VPN connections."
-Write-Host -ForegroundColor Red "### Do not use this link if you want to go to production since the Directline Key will get exposed on the network (query params are not encrypted):"
 Write-Host -ForegroundColor Red "### https://h2floh.github.io/GeoDistributedAzureBot/WebChat/index.html$queryparams"
-Write-Host -ForegroundColor Yellow "###`n### Use this link on your local computer (if you cloned the repo to your local computer) in order to not expose your Directline Key:"
+Write-Host -ForegroundColor Yellow "###`n### Use this link on your local computer"
 Write-Host -ForegroundColor Yellow "### $($webchathtmlfile.FullName)$queryparams"
 
 # Return execution status
