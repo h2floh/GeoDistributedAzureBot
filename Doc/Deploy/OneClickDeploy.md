@@ -27,6 +27,7 @@ After the script is successfully executed the bot should be in a usable state
 | LETS_ENCRYPT_STAGING | Boolean | false | False | $True -> Use Let's Encrypt staging for script testing (Bot cannot be reached from Bot Framework Service)  |
 | PFX_FILE_LOCATION | String | false |  | SSL CERT (PFX Format) file location |
 | PFX_FILE_PASSWORD | String | false |  | SSL CERT (PFX Format) file password |
+| AZUREFRONTDOOR | Boolean | false | False | Distribution Service: TrafficManager or Azure FrontDoor  |
 | AUTOAPPROVE | Boolean | false | False | Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval  |
 | RERUN | Boolean | false | False | To change existing infrastructure, e.g. skips DNS check. $False -> first run/no infrastructure, $True -> subsequent run, existing infrastructure  |
 

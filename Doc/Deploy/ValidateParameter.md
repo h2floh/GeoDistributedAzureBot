@@ -30,6 +30,7 @@ After the script is successfully executed it should be ensured that the deployme
 | YOUR_DOMAIN | String | false |  | The domain (CN) name for the SSL certificate |
 | PFX_FILE_LOCATION | String | false |  | SSL CERT (PFX Format) file location |
 | PFX_FILE_PASSWORD | String | false |  | SSL CERT (PFX Format) file password |
+| AZUREFRONTDOOR | Boolean | false | False | Distribution Service: TrafficManager or Azure FrontDoor  |
 | AUTOAPPROVE | Boolean | false | False | Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval |
 | ALREADYCONFIRMED | Boolean | false | False | Flag to determine if run from within OneClickDeploy.ps1 |
 | RERUN | Boolean | false | False | To change existing infrastructure, e.g. skips DNS check. `$False -> first run/no infrastructure, `$True -> subsequent run, existing infrastructure |

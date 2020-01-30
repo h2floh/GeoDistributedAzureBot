@@ -38,7 +38,7 @@ param(
 
     # Terraform folders from within Deploy folder
     [Parameter(HelpMessage="Terraform folders from within Deploy folder")]
-    [string[]] $TERRAFORM_FOLDERS =  @("IaC", "SSLActivation", "SSLIssuing"),
+    [string[]] $TERRAFORM_FOLDERS =  @("IaCTM", "IaCAFD", "SSLActivation", "SSLIssuing"),
 
     # Maximum wait time for RBAC rights to be propagated. Default 3 min
     [Parameter(HelpMessage="Maximum wait time for RBAC rights to be propagated. Default 3 min")]

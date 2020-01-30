@@ -68,6 +68,11 @@ Write-Host "## 1. Export SSL Certificate from KeyVault"
 if ($AUTOAPPROVE -eq $False) {
     & "$(Get-ScriptPath)\ExportSSL.ps1" -PFX_FILE_LOCATION $PFX_FILE_LOCATION -KEYVAULT_CERT_NAME $KEYVAULT_CERT_NAME
     $success = $success -and $LASTEXITCODE
+
+    if (-not $success) 
+    {
+        Write-Host -ForegroundColor Yellow "### WARNING, EXPORT OF SSL CERT FAILED. This is normal behaviour if you used Azure Front Door instead of TrafficManager!!"
+    }
 } else {
     Write-Host -ForegroundColor Yellow "### WARNING, NO SSL EXPORT DUE TO ACTIVATED AUTOAPPROVE OPTION!!"
 }

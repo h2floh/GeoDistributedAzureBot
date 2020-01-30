@@ -7,7 +7,8 @@ Terraform Deployment of the base infrastructure
 
 This script will do following steps:
 
-1. Deploy Infrastructure with Terraform
+1. Determine which variant will be deployed
+2. Deploy Infrastructure with Terraform
 
 After the script is successfully executed the Bot can be deployed to WebApps and infrastructure is ready for import 
 a SSL certificate and activation of TrafficManager
@@ -36,6 +37,10 @@ param(
     [Parameter(HelpMessage="Region used for global services")]
     [string] $BOT_GLOBAL_REGION = "japaneast",
 
+    # Distribution Service: TrafficManager or Azure FrontDoor - Default: $False -> TrafficManager, $True -> AzureFrontDoor
+    [Parameter(HelpMessage="Distribution Service: TrafficManager or Azure FrontDoor - Default: `$False -> TrafficManager, `$True -> AzureFrontDoor")]
+    [bool] $AZUREFRONTDOOR = $False,
+
     # Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval
     [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
     [bool] $AUTOAPPROVE = $False
@@ -50,8 +55,20 @@ $azureBotRegions = "$(Get-ScriptPath)/$terraformFolder/azure_bot_regions.tfvars.
 # Tell who you are (See HelperFunction.ps1)
 Write-WhoIAm
 
+# Choosing Terraform "Template", it is easier to copy everything to IaC folder for the script flow after deployment (retrieval of Outputs)
+Write-Host "## 1. Determine which variant will be deployed"
+if ($AZUREFRONTDOOR)
+{
+    Write-Host "### Front Door, copying template to IaC folder..."
+    Copy-TerraformFolder -FROM "IaCAFD"
+}
+else {
+    Write-Host "### TrafficManager, copying template to IaC folder..."
+    Copy-TerraformFolder -FROM "IaCTM"
+}
+
 # Execute first Terraform to create the infrastructure
-Write-Host "## 1. Deploy Infrastructure with Terraform"
+Write-Host "## 2. Deploy Infrastructure with Terraform"
 
 # Create Variable file for Terraform
 $result = Set-RegionalVariableFile -FILENAME $azureBotRegions -BOT_REGIONS $BOT_REGIONS

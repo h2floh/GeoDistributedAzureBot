@@ -1,0 +1,104 @@
+resources:
+  containers:
+  - container: geobotagent
+    image: h2floh/geobotagent
+
+# No CI trigger
+trigger: none
+
+# PR builds
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - Deploy
+    - AzureDevOps/oneclickdeploytest.yaml
+
+# Scheduled Build on change Mo-Sa
+schedules:
+- cron: "0 18 * * 1-6"
+  displayName: Daily 3am build on change (Seoul)
+  branches:
+    include:
+    - master
+  always: false
+- cron: "0 18 * * 0"
+  displayName: Weekly 3am build (Seoul)
+  branches:
+    include:
+    - master
+  always: true
+
+jobs:
+- job: deploy_destroy
+  displayName: 'Deploy & Destroy'
+  pool:
+    name: Default
+    demands:
+    - docker
+  container: geobotagent
+  variables:
+  # This group must include following variables: 
+  # - ServicePrincipalID (Client/App ID)
+  # - ServicePrincipalSecret (Client Secret)
+  # - TenantId (AAD Id)
+  # - SubscriptionId (Azure Subscription)
+  - group: SubscriptionDetails
+  steps:
+  - pwsh: |
+      # generate random bot name
+      $BOTNAME = -join ((97..122) | Get-Random -Count 1 | % {[char]$_}) + -join ((48..57) + (97..122) | Get-Random -Count 9 | % {[char]$_})
+      
+      Write-Host "##vso[task.setvariable variable=BOTNAME]$BOTNAME"
+    displayName: 'Generate Bot Name'
+    errorActionPreference: continue
+
+  - pwsh: |
+      # Azure Login
+      az login --service-principal --username $(ServicePrincipalID) --password $(ServicePrincipalSecret) --tenant $(TenantId)
+      
+      # Terraform
+      Write-Host "##vso[task.setvariable variable=ARM_CLIENT_ID]$(ServicePrincipalID)"
+      Write-Host "##vso[task.setvariable variable=ARM_CLIENT_SECRET]$(ServicePrincipalSecret)"
+      Write-Host "##vso[task.setvariable variable=ARM_SUBSCRIPTION_ID]$(SubscriptionId)"
+      Write-Host "##vso[task.setvariable variable=ARM_TENANT_ID]$(TenantId)"
+    displayName: 'Prepare Azure connection for CLI & Terraform '
+
+  - pwsh: |
+      # One Click Deploy
+      
+      Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -AZUREFRONTDOOR $True -AUTOAPPROVE $True
+      
+      # $Lastexitcode $True -> Success, we have to change it to 0
+      exit -not $LASTEXITCODE
+    errorActionPreference: continue
+    displayName: OneClickDeploy
+
+  - pwsh: |
+      # One Click Destroy
+      
+      Deploy/OneClickDestroy.ps1 -BOT_NAME $env:BOTNAME -AUTOAPPROVE $True
+      
+      # $Lastexitcode $True -> Success, we have to change it to 0
+      exit -not $LASTEXITCODE
+    errorActionPreference: continue
+    displayName: OneClickDestroy
+    condition: always()
+
+  - pwsh: |
+      # Az logout
+      az logout
+      
+      # Clear ENV Variables
+      # Terraform
+      $env:ARM_CLIENT_ID=""
+      $env:ARM_CLIENT_SECRET=""
+      $env:ARM_SUBSCRIPTION_ID=""
+      $env:ARM_TENANT_ID=""
+    failOnStderr: true
+    displayName: 'Az Logout'
+    condition: always()
+
+
