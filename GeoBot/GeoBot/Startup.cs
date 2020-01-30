@@ -32,16 +32,6 @@ namespace GeoBot
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddCors(options =>
-            {
-                options.AddPolicy("all",
-                builder =>
-                {
-                    builder.AllowAnyOrigin();
-                });
-            });
-
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // The following line enables Application Insights telemetry collection.
@@ -116,7 +106,6 @@ namespace GeoBot
             app.UseDefaultFiles();
             app.UseStaticFiles();
             app.UseWebSockets();
-            app.UseCors("all");
             app.UseMvc();
         }
     }
