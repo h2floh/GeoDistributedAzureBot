@@ -8,7 +8,8 @@ Terraform Deployment of the base infrastructure
 
 This script will do following steps:
 
-1. Deploy Infrastructure with Terraform
+1. Determine which variant will be deployed
+2. Deploy Infrastructure with Terraform
 
 After the script is successfully executed the Bot can be deployed to WebApps and infrastructure is ready for import 
 a SSL certificate and activation of TrafficManager
@@ -20,6 +21,7 @@ a SSL certificate and activation of TrafficManager
 | BOT_NAME | String | true |  | Unique Bot Name -> will be used as DNS prefix for CosmosDB, TrafficManager and KeyVault |
 | BOT_REGIONS | String[] | false | @("koreacentral", "southeastasia") | Regions to deploy the Bot to |
 | BOT_GLOBAL_REGION | String | false | japaneast | Region used for global services |
+| AZUREFRONTDOOR | Boolean | false | False | Distribution Service: TrafficManager or Azure FrontDoor  |
 | AUTOAPPROVE | Boolean | false | False | Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval |
 
 ## Examples

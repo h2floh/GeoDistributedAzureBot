@@ -68,6 +68,10 @@ param(
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
+    # Distribution Service: TrafficManager or Azure FrontDoor - Default: $False -> TrafficManager, $True -> AzureFrontDoor
+    [Parameter(HelpMessage="Distribution Service: TrafficManager or Azure FrontDoor - Default: `$False -> TrafficManager, `$True -> AzureFrontDoor")]
+    [bool] $AZUREFRONTDOOR = $False,
+
     # Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval - Default: $False
     [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval - Default: `$False")]
     [bool] $AUTOAPPROVE = $False,
@@ -87,18 +91,18 @@ $resource_group_name = "rg-$BOT_NAME-tfstate"
 Write-WhoIAm
 
 # Validate Input parameter combination
-$validationresult = & "$(Get-ScriptPath)\ValidateParameter.ps1" -BOT_NAME $BOT_NAME -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN
+$validationresult = & "$(Get-ScriptPath)\ValidateParameter.ps1" -BOT_NAME $BOT_NAME -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AZUREFRONTDOOR $AZUREFRONTDOOR -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN
 
 if ($validationresult)
 {
     # Initialize Terraform Remote State Store
-    & "$(Get-ScriptPath)\InitTerraform.ps1" -STORAGE_ACCOUNT_NAME $storage_account_name -RESOURCE_GROUP_NAME $resource_group_name -LOCATION $BOT_GLOBAL_REGION
+    & "$(Get-ScriptPath)\InitTerraform.ps1" -STORAGE_ACCOUNT_NAME $storage_account_name -RESOURCE_GROUP_NAME $resource_group_name -LOCATION $BOT_GLOBAL_REGION 
     $success = $success -and $LASTEXITCODE
 
     # Execute first Terraform to create the infrastructure
     if ($success)
     {
-        & "$(Get-ScriptPath)\DeployInfrastructure.ps1" -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AUTOAPPROVE $AUTOAPPROVE
+        & "$(Get-ScriptPath)\DeployInfrastructure.ps1" -BOT_NAME $BOT_NAME -BOT_REGIONS $BOT_REGIONS -BOT_GLOBAL_REGION $BOT_GLOBAL_REGION -AZUREFRONTDOOR $AZUREFRONTDOOR -AUTOAPPROVE $AUTOAPPROVE 
         $success = $success -and $LASTEXITCODE
 
         # Store Terraform State Account info into KeyVault (for retrieval by OneClickDestroy)
@@ -127,7 +131,7 @@ if ($validationresult)
     }
 
     # Import or issue a SSL certificate and activate it in WebApps and connect WebApps to TrafficManager
-    if ($success)
+    if ($success -and (-not $AZUREFRONTDOOR))
     {
         & "$(Get-ScriptPath)\CreateOrImportSSL.ps1" -YOUR_CERTIFICATE_EMAIL $YOUR_CERTIFICATE_EMAIL -YOUR_DOMAIN $YOUR_DOMAIN -LETS_ENCRYPT_STAGING $LETS_ENCRYPT_STAGING -PFX_FILE_LOCATION $PFX_FILE_LOCATION -PFX_FILE_PASSWORD $PFX_FILE_PASSWORD -AUTOAPPROVE $AUTOAPPROVE -RERUN $RERUN -ALREADYCONFIRMED $True
         $success = $success -and $LASTEXITCODE

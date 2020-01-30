@@ -1,8 +1,10 @@
 # Azure Bot Framework based Geo Distributed Bot with failover capability
 
-[![Test OneClickDeploy](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Deploy?branchName=master&label=Test%20OneClickDeploy)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=6)
-[![Build Status Sample GeoBot](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Bot?branchName=master&label=Build%20GeoBot)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=5)
+[![Test OneClickDeploy TM](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Deploy?branchName=master&label=Test%20OneClickDeploy%20TrafficManager)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=6)
 
+[![Test OneClickDeploy AFD](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-DeployAFD?branchName=master&label=Test%20OneClickDeploy%20Azure%20Front%20Door)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=15)
+
+[![Build Status Sample GeoBot](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-Bot?branchName=master&label=Build%20GeoBot)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=5)
 [![Build Status KeyVault CertBot Image](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-KeyVaultCertBot?branchName=master&label=KeyVault%20CertBot)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=8)
 [![Build Status Pipeline Agent Image](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_apis/build/status/GeoDistributedAzureBot-PipelineAgent?branchName=master&label=Pipeline%20Agent)](https://dev.azure.com/h2floh/GeoDistributedAzureBot/_build/latest?definitionId=7)
 
@@ -100,7 +102,9 @@ Please report any problems you face under issues!
 
 You can use the [OneClickDeploy.ps1](Doc/Deploy/OneClickDeploy.md) script, several options are available.
 
-> :warning: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
+> :information_source: **Azure Front Door mode:** It is now possible to use Azure Front Door instead of TrafficManager. This setup won't need a custom domain name or Let's Encrypt SSL certificate and therefore will be stable functioning. Add the `-AZUREFRONTDOOR $True` parameter to the excecution of the OneClickDeployment script. :information_source:
+
+> :warning: **TrafficManager mode**: For testing the provided automatic issuing of a `Let's Encrypt` certificate is a good way to overcome this, but it has rate limitations (top level domain 50 per week more info [here](https://letsencrypt.org/docs/rate-limits/)). Also currently there is no automatic way in place to renew the certificate automatically every 3 months. So use it wisely and try to reuse the SSL certificate. Even this architecture is capable of handling and be easily scaled out for production environments we strongly recommend a Custom Domain Name and to use certificate issuing via [AppServices](https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate) or your preferred CA (Certificate Authority). :warning:
 
 > :warning: Known issues/drawbacks:
 > - __the Bot Name parameter has to be unique__ since several Azure services will use it as prefix. Stick to lowercase no dashes and special chars and less than 20char. e.g. **myfirstname1234**
@@ -114,20 +118,23 @@ You can use the [OneClickDeploy.ps1](Doc/Deploy/OneClickDeploy.md) script, sever
 > :information_source: To use a custom domain name you have just to set a CNAME entry in your DNS server pointing to the TrafficManager domain name (default `<botname>.trafficmanager.net`). See [here](https://docs.microsoft.com/en-us/azure/dns/dns-operations-recordsets-portal) on how to do it if you use Azure DNS.
 
 ```powershell
-# Example 1: Issues a SSL certificate from Let's Encrypt for the TrafficManager Endpoint Domain
+# Example 1: Azure Front Door Version (Let's Encrypt SSL certificate not needed)
+.\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -AZUREFRONTDOOR $True -AUTOAPPROVE $True
+
+# Example 2: Issues a SSL certificate from Let's Encrypt for the TrafficManager Endpoint Domain
 # [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -AUTOAPPROVE $True
 
-# Example 2: Issues a SSL certificate from Let's Encrypt for your custom domain
+# Example 3: Issues a SSL certificate from Let's Encrypt for your custom domain
 # [HINT: Export your Certificate (see ExportSSL.ps1) for reuse in subsequent runs]
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -YOUR_CERTIFICATE_EMAIL <yourmailaddressforletsencrypt> -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True
 
-# Example 3: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
+# Example 4: Imports an existing SSL certificate (PFX File) for the TrafficManager Endpoint Domain
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> -AUTOAPPROVE $True
 
-# Example 4: Imports an existing SSL certificate (PFX File) for your custom domain
+# Example 5: Imports an existing SSL certificate (PFX File) for your custom domain
 .\Deploy\OneClickDeploy.ps1 -BOT_NAME <yourbotname> `
  -PFX_FILE_LOCATION <path to pfx file> -PFX_FILE_PASSWORD <password of pfx file> `
  -YOUR_DOMAIN <yourdomain> -AUTOAPPROVE $True

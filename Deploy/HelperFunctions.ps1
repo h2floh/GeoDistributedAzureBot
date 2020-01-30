@@ -66,16 +66,37 @@ function Check-ServiceAvailability {
         [Parameter(HelpMessage="Full Qualified Domain Name to check")]
         [string] $FQDN
     )
-    # Not working in PowerShellCore: Resolve-DnsName -Name $FQDN -DnsOnly > $null 2> $1
-    # Changing to nslookup
-    $resolved = nslookup $FQDN 2> $null
-    if ((($resolved | Select-String $FQDN).Length -gt 0) -and (($resolved | Select-String "server can't find").Length -eq 0))
+
+    $available = $True
+
+    if ($Service -eq "FrontDoor")
+    {
+        # FrontDoor DNS always exists, curl on unavailable resource reveals 302 redirect to /pages/404.html (notfound)
+        # curl -I https://mygeobot2.azurefd.net
+        # HTTP/1.1 302 Found
+        # Content-Length: 0
+        # Location: /pages/404.html
+        # Server: Microsoft-IIS/10.0
+        # X-MSEdge-Ref: Ref A: C18D49B3B18F4EBB950B562E01AB4347 Ref B: SLAEDGE0808 Ref C: 2020-01-30T04:40:26Z
+        # Date: Thu, 30 Jan 2020 04:40:26 GMT
+        $CurlArgument = '-I', "https://$FQDN"
+        $httpresult = curl @CurlArgument 2> $null
+        $result = [string]::Concat($httpresult)
+        $available = $result.Contains("302 Found") -and $result.Contains("404.html")
+    }
+    else {
+        # Not working in PowerShellCore: Resolve-DnsName -Name $FQDN -DnsOnly > $null 2> $1
+        # Changing to nslookup
+        $resolved = nslookup $FQDN 2> $null
+        $available = -not ((($resolved | Select-String $FQDN).Length -gt 0) -and (($resolved | Select-String "server can't find").Length -eq 0))
+    }
+
+    if (-not $available)
     {
         Write-Host -ForegroundColor Red "### ERROR, $Service with name '$FQDN' already exists. Please try another Bot Name."
-        return $False
-    } else {
-        return $True
     }
+
+    return $available
 }
 
 function Set-RegionalVariableFile {
@@ -210,4 +231,24 @@ function Invoke-Terraform {
     # Forward Execution result of Terraform
     $LASTEXITCODE=$TFEXEC
     $global:LastExitCode=$TFEXEC
+}
+
+function Copy-TerraformFolder {
+    <#
+    .SYNOPSIS
+    Copys contents from one Terraform Folder to another folder
+    #>
+    param(
+        [Parameter(Mandatory=$True, HelpMessage="Source Folder")]
+        [string] $FROM,
+
+        [Parameter(HelpMessage="Destination Folder")]
+        [string] $TO = "IaC"
+    )
+    # Ensure target folder exists
+    New-Item -ItemType Directory -Force -Path "$(Get-ScriptPath)\$TO" > $null
+    # Remove any content in target folder
+    Get-ChildItem "$(Get-ScriptPath)\$TO" -Recurse -Force | Remove-Item -Recurse -Force
+    # Copy content
+    Copy-Item "$(Get-ScriptPath)\$FROM\*" -Destination "$(Get-ScriptPath)\$TO" -Recurse -Force
 }

@@ -21,7 +21,7 @@ After the script is successfully executed the Terraform can use the storage as r
 | STORAGE_ACCOUNT_NAME | String | true |  | Storage Account Name for Terraform remote state |
 | RESOURCE_GROUP_NAME | String | true |  | Resource Group Name where Storage Account is placed for Terraform remote state |
 | LOCATION | String | false | japaneast | Region used for Resource Group and Storage Account |
-| TERRAFORM_FOLDERS | String[] | false | @("IaC", "SSLActivation", "SSLIssuing") | Terraform folders from within Deploy folder |
+| TERRAFORM_FOLDERS | String[] | false | @("IaCTM", "IaCAFD", "SSLActivation", "SSLIssuing") | Terraform folders from within Deploy folder |
 | MAX_WAIT_TIME_MIN | Int32 | false | 3 | Maximum wait time for RBAC rights to be propagated. Default 3 min |
 
 ## Examples

@@ -51,6 +51,10 @@ param(
     [Parameter(HelpMessage="SSL CERT (PFX Format) file password")]
     [string] $PFX_FILE_PASSWORD,
 
+    # Distribution Service: TrafficManager or Azure FrontDoor - Default: $False -> TrafficManager, $True -> AzureFrontDoor
+    [Parameter(HelpMessage="Distribution Service: TrafficManager or Azure FrontDoor - Default: `$False -> TrafficManager, `$True -> AzureFrontDoor")]
+    [bool] $AZUREFRONTDOOR = $False,
+
     # Terraform and SSL creation Automation Flag. $False -> Interactive, Approval $True -> Automatic Approval
     [Parameter(HelpMessage="Terraform and SSL creation Automation Flag. `$False -> Interactive, Approval `$True -> Automatic Approval")]
     [bool] $AUTOAPPROVE = $False,
@@ -79,8 +83,16 @@ if ($BOT_NAME -ne "")
         $dnscheck = $True
         # CosmosDB
         $dnscheck = (Check-ServiceAvailability -Service "CosmosDB" -FQDN "$BOT_NAME.documents.azure.com") -and $dnscheck 
-        # Traffic Manager
-        $dnscheck = (Check-ServiceAvailability -Service "TrafficManager" -FQDN "$BOT_NAME.trafficmanager.net") -and $dnscheck
+        if ($AZUREFRONTDOOR)
+        {
+            # Azure Front Door
+            $dnscheck = (Check-ServiceAvailability -Service "FrontDoor" -FQDN "$BOT_NAME.azurefd.net") -and $dnscheck
+        }
+        else
+        {
+            # Traffic Manager
+            $dnscheck = (Check-ServiceAvailability -Service "TrafficManager" -FQDN "$BOT_NAME.trafficmanager.net") -and $dnscheck
+        }
         # KeyVault
         $dnscheck = (Check-ServiceAvailability -Service "KeyVault" -FQDN "$BOT_NAME.vault.azure.net") -and $dnscheck
         # Storage Account for State Store
@@ -94,8 +106,11 @@ if ($BOT_NAME -ne "")
     }
 } 
 else {
-    # Check most likly executed after creation of Infrastructure, load TrafficManager values from Terraform run
-    $TrafficManager =  Get-TerraformOutput("trafficManager") | ConvertFrom-Json
+    if (-not $AZUREFRONTDOOR)
+    {
+        # Check most likly executed after creation of Infrastructure, load TrafficManager values from Terraform run
+        $TrafficManager =  Get-TerraformOutput("trafficManager") | ConvertFrom-Json
+    }
 }
 
 # Check Azure Login
@@ -120,76 +135,86 @@ elseif ($ALREADYCONFIRMED -eq $False) {
     Write-Host -ForegroundColor Yellow "### Deploying to Azure Subscription '$($azureAccount.name)' (ID:$($azureAccount.id))"
 }
 
-if ($PFX_FILE_LOCATION -ne "")
+# If user goes with Azure Front Door no further checks have to be done
+if (-not $AZUREFRONTDOOR)
 {
-    if (-not (Test-Path -Path $PFX_FILE_LOCATION)) {
-        # User wants SSL Import but file could not be found
-        Write-Host "### ERROR, PFX File with location '$PFX_FILE_LOCATION' does not exists."
-        Write-Host "### If you want to import an existing SSL certificate please check the correct location of the file."
-        Write-Host "### If you want to issue a new SSL certificate please remove the -PFX_FILE_LOCATION parameter for execution."
-
-        return $False
-    } else {
-        return $True
-    }
-} else {
-    # User wants to create a new certificate, check if preconditions are met. Reassure if not in Autoapprove mode
-    if ($YOUR_CERTIFICATE_EMAIL -ne "")
+    if ($PFX_FILE_LOCATION -ne "")
     {
-        # Validate eMail
-        if (-not ($YOUR_CERTIFICATE_EMAIL -match "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"))
-        {
-            Write-Host "### ERROR: Please provide a valid mail for the -YOUR_CERTIFICATE_EMAIL parameter. Provided value ($YOUR_CERTIFICATE_EMAIL)"
+        if (-not (Test-Path -Path $PFX_FILE_LOCATION)) {
+            # User wants SSL Import but file could not be found
+            Write-Host "### ERROR, PFX File with location '$PFX_FILE_LOCATION' does not exists."
+            Write-Host "### If you want to import an existing SSL certificate please check the correct location of the file."
+            Write-Host "### If you want to issue a new SSL certificate please remove the -PFX_FILE_LOCATION parameter for execution."
+    
             return $False
         } else {
-
-            # Confirm SSL creation/issuing process
+            return $True
+        }
+    } else {
+        # User wants to create a new certificate, check if preconditions are met. Reassure if not in Autoapprove mode
+        if ($YOUR_CERTIFICATE_EMAIL -ne "")
+        {
+            # Validate eMail
+            if (-not ($YOUR_CERTIFICATE_EMAIL -match "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"))
+            {
+                Write-Host "### ERROR: Please provide a valid mail for the -YOUR_CERTIFICATE_EMAIL parameter. Provided value ($YOUR_CERTIFICATE_EMAIL)"
+                return $False
+            } else {
+    
+                # Confirm SSL creation/issuing process
+                if ($YOUR_DOMAIN -eq "")
+                {
+                    # Use Traffic Manager Domain
+                    if ($BOT_NAME -eq "")
+                    {
+                        $YOUR_DOMAIN = $TrafficManager.fqdn
+                    } else {
+                        $YOUR_DOMAIN = "$BOT_NAME.trafficmanager.net"
+                    }
+                    
+                }
+                # SSL creation/issuing reassure
+                if ($AUTOAPPROVE -eq $False -and $ALREADYCONFIRMED -eq $False)
+                {
+                    $confirm = Read-Host "### Are you sure you want to issue a new SSL certificate for domain '$YOUR_DOMAIN'? [y/n]"
+                } else {
+                    $confirm = "y"
+                }
+            
+                if ($confirm -eq "y")
+                {
+                    return $True
+                } else {
+                    Write-Host "### Hint: If you want to issue a SSL certificate for a custom domain name please add the FQDN with the -YOUR_DOMAIN parameter."
+                    Write-Host "### Hint: If you want to import an existing SSL certificate please rerun the script with -PFX_FILE_LOCATION and -PFX_FILE_PASSWORD parameter."
+                    return $False
+                }
+            }
+            
+    
+        } else {
+            # Parameter combination check
+            if ($YOUR_DOMAIN -ne "")
+            {
+                Write-Host "### ERROR, if you want to issue a SSL certificate please also provide your eMail Adress in -YOUR_CERTIFICATE_EMAIL parameter"
+            } 
             if ($YOUR_DOMAIN -eq "")
             {
-                # Use Traffic Manager Domain
-                if ($BOT_NAME -eq "")
-                {
-                    $YOUR_DOMAIN = $TrafficManager.fqdn
-                } else {
-                    $YOUR_DOMAIN = "$BOT_NAME.trafficmanager.net"
-                }
-                
-            }
-            # SSL creation/issuing reassure
-            if ($AUTOAPPROVE -eq $False -and $ALREADYCONFIRMED -eq $False)
-            {
-                $confirm = Read-Host "### Are you sure you want to issue a new SSL certificate for domain '$YOUR_DOMAIN'? [y/n]"
-            } else {
-                $confirm = "y"
-            }
-        
-            if ($confirm -eq "y")
-            {
-                return $True
-            } else {
-                Write-Host "### Hint: If you want to issue a SSL certificate for a custom domain name please add the FQDN with the -YOUR_DOMAIN parameter."
-                Write-Host "### Hint: If you want to import an existing SSL certificate please rerun the script with -PFX_FILE_LOCATION and -PFX_FILE_PASSWORD parameter."
-                return $False
-            }
+                Write-Host "### CAN'T CONTINUE, we don't know if you want to issue a SSL certificate or import one."
+                Write-Host "### If you want to import an existing SSL certificate please provide the -PFX_FILE_LOCATION and -PFX_FILE_PASSWORD parameter."
+                Write-Host "### If you want to issue a new SSL certificate please provide the -YOUR_CERTIFICATE_EMAIL"
+                Write-Host "### If you want to issue a new SSL certificate for a Custom Domain Name (not trafficmanager.net) you also have to specify the FQDN in -YOUR_DOMAIN parameter."
+                Write-Host "### If you want to use Azure Front Door instead of TrafficManager please specify the -AZUREFRONTDOOR `$True parameter."
+            } 
+    
+            return $False
         }
-        
-
-    } else {
-        # Parameter combination check
-        if ($YOUR_DOMAIN -ne "")
-        {
-            Write-Host "### ERROR, if you want to issue a SSL certificate please also provide your eMail Adress in -YOUR_CERTIFICATE_EMAIL parameter"
-        } 
-        if ($YOUR_DOMAIN -eq "")
-        {
-            Write-Host "### CAN'T CONTINUE, we don't know if you want to issue a SSL certificate or import one."
-            Write-Host "### If you want to import an existing SSL certificate please provide the -PFX_FILE_LOCATION and -PFX_FILE_PASSWORD parameter."
-            Write-Host "### If you want to issue a new SSL certificate please provide the -YOUR_CERTIFICATE_EMAIL"
-            Write-Host "### If you want to issue a new SSL certificate for a Custom Domain Name (not trafficmanager.net) you also have to specify the FQDN in -YOUR_DOMAIN parameter."
-        } 
-
-        return $False
     }
+} 
+else {
+    # Go with Azure Front Door
+    return $True
 }
+
 
 
