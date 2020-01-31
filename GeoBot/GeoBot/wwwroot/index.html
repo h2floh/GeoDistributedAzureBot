@@ -4,22 +4,6 @@
     <div id="webchat" role="main"></div>
     <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
     <script>
-        // function getUrlParam(name) {
-        //     var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
-        //     return (results && results[1]) || undefined;
-        // }
-
-        // var botname = getUrlParam('botname');
-        // var endpoint = getUrlParam('endpoint');
-        
-        // if (botname === undefined && endpoint === undefined) {
-        //     // if botname and endpoint is not set - we will use document.URL value as a default
-        //     hostname = document.location.hostname;
-        //     splitedHostname = hostname.split('.'); 
-        //     endpoint = "https://" + hostname;  
-        //     botname = splitedHostname[0];  
-        // } 
-
         function createFetchSpeechServicesCredentials(){
             let expireAfter = 0;
             let lastPromise;
