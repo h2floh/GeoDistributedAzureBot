@@ -10,7 +10,6 @@
 
             return () => {
                 if (Date.now() > expireAfter) {
-                    // const speechServiceUri = endpoint + "/speech/token";
                     const speechServiceUri = "/speech/token";
                     const speechServicesTokenResPromise = fetch(speechServiceUri, { method: 'GET' });
 
@@ -28,7 +27,6 @@
         }
 
         async function getDirectlineToken(){
-            // let tokenGenerateServiceUri = endpoint + "/directline/token";
             const tokenGenerateServiceUri = "/directline/token";
             const directlineToken = await fetch(tokenGenerateServiceUri, { method: 'GET' })
                 .then((res) => res.json())
