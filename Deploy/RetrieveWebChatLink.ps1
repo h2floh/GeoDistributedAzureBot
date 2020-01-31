@@ -37,24 +37,13 @@ Write-Host "## 1. Retrieve Bot Data from Terraform infrastructure execution"
 $Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
 $success = $success -and $?
 
-# 2. Retrive DirectlineKey and register it to KV
-Write-Host "## 2. Retrive DirectlineKey and register it to KV"
-$directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
-$success = $success -and $?
-# create a secret in Key Vault called DirectlineKey
-az keyvault secret set --vault-name $Bot.name --name 'DirectlineKey' --value $directline.properties.properties.sites.key > $null
-
-# 3. Display Bot Name, Endpoint and generate Link
-Write-Host "## 3. Display Bot Name, Endpoint and generate Link"
-$endpoint = "https://$($Bot.name).trafficmanager.net"
-$success = $success -and $?
-$queryparams = "?bot=$($Bot.name)&endpoint=$($endpoint)"
-$webchathtmlfile = Get-ItemProperty -Path "$(Get-ScriptPath)/../WebChat/index.html"
+# 2. Generate Link
+Write-Host "## 2. Generate Link"
+$endpoint = "https://$($Bot.name).trafficmanager.net/index.html"
 
 Write-Host -ForegroundColor Green "`n`n### If you were lucky and there were no errors in between your Geo Distributed Bot is ready!`n### If you are just testing you can use this link to open a WebChat to your Bot from any browser.`n### E.g. if you want to test it from different VM's or VPN connections."
-Write-Host -ForegroundColor Red "### https://h2floh.github.io/GeoDistributedAzureBot/WebChat/index.html$queryparams"
-Write-Host -ForegroundColor Yellow "###`n### Use this link on your local computer"
-Write-Host -ForegroundColor Yellow "### $($webchathtmlfile.FullName)$queryparams"
+Write-Host -ForegroundColor Yellow "###`n### Use this link with your browser"
+Write-Host -ForegroundColor Yellow "### $endpoint"
 
 # Return execution status
 Write-ExecutionStatus -success $success
