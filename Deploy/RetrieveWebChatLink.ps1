@@ -36,14 +36,25 @@ Write-WhoIAm
 Write-Host "## 1. Retrieve Bot Data from Terraform infrastructure execution"
 $Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
 $success = $success -and $?
+Write-Host "## Test $Bot"
 
-# 2. Generate Link
-Write-Host "## 2. Generate Link"
-$endpoint = "https://$($Bot.name).trafficmanager.net/index.html"
+# 2. Retrieve Bot endpoint information using Azure CLI
+Write-Host "## 2. Retrieve Bot endpoint information using Azure CLI"
+$botSettings = $(az bot show -n $Bot.name -g $Bot.resource_group) | ConvertFrom-Json
+$success = $success -and $?
+Write-Host $botSettings
+$endpoint = $botSettings.properties.endpoint
+# If this bot using azure web app, we need to trim '/api/messages'
+if ($endpoint -like "*api/messages*") { 
+    $endpoint = $endpoint.TrimEnd("/api/messages")
+}
+Write-Host "endpoint: $endpoint"
 
+# 3. Generate Link
+Write-Host "## 3. Generate Link"
 Write-Host -ForegroundColor Green "`n`n### If you were lucky and there were no errors in between your Geo Distributed Bot is ready!`n### If you are just testing you can use this link to open a WebChat to your Bot from any browser.`n### E.g. if you want to test it from different VM's or VPN connections."
 Write-Host -ForegroundColor Yellow "###`n### Use this link with your browser"
-Write-Host -ForegroundColor Yellow "### $endpoint"
+Write-Host -ForegroundColor Yellow "### $endpoint/index.html"
 
 # Return execution status
 Write-ExecutionStatus -success $success
