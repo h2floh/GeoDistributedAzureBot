@@ -1,0 +1,71 @@
+<html>
+
+<body>
+    <div id="webchat" role="main"></div>
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <script>
+        function createFetchSpeechServicesCredentials(){
+            let expireAfter = 0;
+            let lastPromise;
+
+            return () => {
+                if (Date.now() > expireAfter) {
+                    const speechServiceUri = "/speech/token";
+                    const speechServicesTokenResPromise = fetch(speechServiceUri, { method: 'GET' });
+
+                    expireAfter = Date.now() + 300000;
+                    lastPromise = speechServicesTokenResPromise.then(
+                        res => res.json(),
+                        err => {
+                            lastPromise = null;
+                            return Promise.reject(err);
+                        }
+                    );
+                }
+                return lastPromise;
+            }
+        }
+
+        async function getDirectlineToken(){
+            const tokenGenerateServiceUri = "/directline/token";
+            const directlineToken = await fetch(tokenGenerateServiceUri, { method: 'GET' })
+                .then((res) => res.json())
+                .then(function(result){
+                    return result.token;
+                })
+                .catch(err => console.log(err));
+            return directlineToken;
+        }
+
+        const fetchSpeechServices = createFetchSpeechServicesCredentials();
+
+        (async function() {
+
+            let speechToken = (await fetchSpeechServices()).token;
+            let speechRegion = (await fetchSpeechServices()).region;
+            let directlineToken = await getDirectlineToken();
+
+            const webSpeechPonyfillFactory = await window.WebChat.createCognitiveServicesSpeechServicesPonyfillFactory({
+                authorizationToken: speechToken,
+                region: speechRegion
+            });
+
+            window.WebChat.renderWebChat({
+                    directLine: window.WebChat.createDirectLine({
+                        token: directlineToken
+                    }),
+                    userID: 'geouser',
+                    username: 'Geo User',
+                    locale: 'en-US',
+                    botAvatarInitials: 'GB',
+                    userAvatarInitials: 'GU',
+                    webSpeechPonyfillFactory
+                },
+                document.getElementById('webchat')
+            );
+        })().catch(err => console.error(err));
+        
+    </script>
+</body>
+
+</html>

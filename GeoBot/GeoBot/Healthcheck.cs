@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace GeoBot
 {
@@ -39,9 +41,14 @@ namespace GeoBot
             var cosmosDBresult = await CheckCosmosDB();
             response.Headers.Add("CosmosDBInnerStatusCode", cosmosDBresult.StatusCode);
             response.Headers.Add("CosmosDBInnerStatusReason", cosmosDBresult.StatusMessage);
+            // Check Speech
+            var speechResult = await CheckSpeech();
+            response.Headers.Add("SpeechInnerStatusCode", speechResult.StatusCode);
+            response.Headers.Add("SpeechInnerStatusReason", speechResult.StatusMessage);
 
             // Check overall success
-            if (lUISresult.Success && cosmosDBresult.Success) {
+            if (lUISresult.Success && cosmosDBresult.Success && speechResult.Success)
+            {
                 response.StatusCode = 200;
             }
         }
@@ -85,12 +92,12 @@ namespace GeoBot
                     // read container - to check if until container level all is working
                     using (CosmosClient client = new CosmosClient(configuration["CosmosDBStateStoreEndpoint"], configuration["CosmosDBStateStoreKey"]))
                     {
-                        
+
                         var container = client.GetContainer(configuration["CosmosDBStateStoreDatabaseId"],
                                                             configuration["CosmosDBStateStoreCollectionId"]);
-                        
+
                         var readContainer = await container.ReadContainerAsync();
-                        
+
                         // Return Success
                         return new HealthcheckResult(true, readContainer.StatusCode.ToString(), "CosmosDB account, database and container accessible");
                     }
@@ -113,13 +120,62 @@ namespace GeoBot
 
                     return new HealthcheckResult(false, statusCode, e.Message);
                 }
-               
+
             }
             else
             {
                 // In Case CosmosDB as state store is not configured - skip healthcheck
                 return new HealthcheckResult(true, "200", "CosmosDB not configured");
             }
+        }
+
+        private async Task<HealthcheckResult> CheckSpeech()
+        {
+            // Check on LUIS Endpoint
+            var speechKeyKey = "SpeechAPIKey" + configuration["region"];
+            var speechHostNameKey = "SpeechAPIHostName" + configuration["region"];
+
+            var speechIsConfigured = !string.IsNullOrEmpty(configuration[speechKeyKey]) && !string.IsNullOrEmpty(configuration[speechHostNameKey]);
+            if (speechIsConfigured)
+            {
+                try
+                {
+                    // Get Speech service token
+                    Speech speech = new Speech(configuration, null);
+                    var speechTokenResult = await speech.GetSpeechToken();
+
+                    var speechUrl = $"https://{configuration["region"]}.tts.speech.microsoft.com/cognitiveservices/voices/list";
+                    
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", speechTokenResult);
+                    var requestMessage = new HttpRequestMessage(HttpMethod.Get, speechUrl);
+                    var responseMessage = await httpClient.SendAsync(requestMessage);
+                    
+                    return new HealthcheckResult(responseMessage.IsSuccessStatusCode, responseMessage.StatusCode.ToString(), responseMessage.ReasonPhrase);
+                }
+                catch (Exception e)
+                {
+                    // Return failure
+                    var statusCode = "503";
+                    // Try to extract status code from expeption message: Response status code does not indicate success: 401 
+                    try
+                    {
+                        var rx = new Regex(@"Response status code does not indicate success: (\d{3})");
+                        Match match = rx.Match(e.Message);
+                        if (match.Success)
+                        {
+                            statusCode = match.Groups[1].Value;
+                        }
+                    }
+                    catch { }
+
+                    return new HealthcheckResult(false, statusCode, e.Message);
+                }
+            }
+            else
+            {
+                return new HealthcheckResult(true, "200", "Speech not configured");
+            }
+            
         }
 
         // Data Object
@@ -136,4 +192,11 @@ namespace GeoBot
             internal string StatusMessage { get; }
         }
     }
+}
+
+public class DirectLineToken
+{
+    public string conversationId { get; set; }
+    public string token { get; set; }
+    public int expires_in { get; set; }
 }

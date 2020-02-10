@@ -69,6 +69,18 @@ $success = $success -and $LASTEXITCODE
 # Clean Up
 Remove-Item -Path $azureBotRegions
 
+# 2. Retrieve Bot Data from Terraform infrastructure execution
+Write-Host "## 2. Retrieve Bot Data from Terraform infrastructure execution"
+$Bot = Get-TerraformOutput("bot") | ConvertFrom-Json
+$success = $success -and $?
+
+# 3. Retrive DirectlineKey and register it to KV
+Write-Host "## 3. Retrive DirectlineKey and register it to KV"
+$directline = $(az bot directline show --resource-group $Bot.resource_group --name $Bot.name --with-secrets true) | ConvertFrom-Json
+$success = $success -and $?
+# create a secret in Key Vault called DirectlineKey
+az keyvault secret set --vault-name $Bot.name --name 'DirectlineKey' --value $directline.properties.properties.sites.key > $null
+
 # Check successful execution
 Write-ExecutionStatus -success $success
 exit $success

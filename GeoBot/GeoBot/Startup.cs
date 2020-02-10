@@ -83,6 +83,12 @@ namespace GeoBot
 
             // Add Healthcheck module
             services.AddSingleton<Healthcheck>();
+
+            // Add Speech module
+            services.AddSingleton<Speech>();
+
+            // Add Directline module
+            services.AddSingleton<Directline>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
