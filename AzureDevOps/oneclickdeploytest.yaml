@@ -34,6 +34,7 @@ schedules:
 jobs:
 - job: deploy_destroy
   displayName: 'Deploy & Destroy'
+  timeoutInMinutes: 120
   pool:
     name: Default
     demands:
