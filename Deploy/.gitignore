@@ -6,3 +6,5 @@ botnotselfcontained.zip
 *.tfvars.*
 # Ignore Terraform plan files (we just use this notation since internet search didn't brought any ideas)
 *.tfplan
+# Ignore IaC Folder
+IaC/
