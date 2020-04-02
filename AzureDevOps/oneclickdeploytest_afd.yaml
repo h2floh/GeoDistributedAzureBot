@@ -70,7 +70,7 @@ jobs:
   - pwsh: |
       # One Click Deploy
       
-      Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -AZUREFRONTDOOR $True -AUTOAPPROVE $True
+      Deploy/OneClickDeploy.ps1 -BOT_NAME $env:BOTNAME -AZUREFRONTDOOR $True -BOT_REGIONS @("koreacentral") -AUTOAPPROVE $True
       
       # $Lastexitcode $True -> Success, we have to change it to 0
       exit -not $LASTEXITCODE
