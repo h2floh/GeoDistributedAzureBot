@@ -30,7 +30,7 @@ System.Boolean. Returns $True if executed successfully
 param(
     # Bot Project File - Default: GeoBot/GeoBot/GeoBot.csproj
     [Parameter(HelpMessage="Bot Project File")]
-    [string] $BOT_PROJECT_FILE,
+    [string] $BOT_PROJECT_FILE = ".\GeoBot\GeoBot.csproj",
 
     # Target Runtime see https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
     [Parameter(HelpMessage="Target Runtime see https://docs.microsoft.com/en-us/dotnet/core/rid-catalog")] 
