@@ -48,8 +48,15 @@ jobs:
     inputs:
       dockerFile: AzureDevOps/Agent/pipelineagent.dockerfile
       imageName: '$(RepoName):$(Build.BuildId)'
-      includeLatestTag: true
-
+      includeLatestTag: false
+  - task: Docker@2
+    displayName: Tag image with latest
+    inputs:
+      command: tag
+      arguments: $(RepoName):$(Build.BuildId) $(RepoName):blibla
+      containerRegistry: 'DockerHub h2floh'
+      repository: $(RepoName)
+    #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   - task: Docker@0
     displayName: 'Push an image'
     inputs:
